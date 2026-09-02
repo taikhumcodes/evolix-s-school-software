@@ -1,8 +1,11 @@
 import React from 'react';
 import { TenantSwitcher } from './TenantSwitcher';
-import { Bell, Search, ShieldCheck } from 'lucide-react';
+import { Bell, LogOut, Search, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../core/auth/AuthContext';
 
 export const Header: React.FC = () => {
+  const { logout } = useAuth();
+
   return (
     <header className="h-20 border-b border-zinc-200 bg-white px-8 flex items-center justify-between sticky top-0 z-30 shrink-0">
       <div className="flex items-center gap-6">
@@ -30,6 +33,15 @@ export const Header: React.FC = () => {
         <button className="relative p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200 transition-all">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-mehndi-500 ring-2 ring-white"></span>
+        </button>
+
+        <button
+          onClick={logout}
+          className="md:hidden p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200 transition-all"
+          title="Logout"
+          aria-label="Logout"
+        >
+          <LogOut className="w-4 h-4" />
         </button>
       </div>
     </header>
