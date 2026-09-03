@@ -15,6 +15,7 @@ from app.models.base import Base
 # Import all models so they are registered with Base.metadata
 from app.models.foundation import *
 from app.models.security import *
+from app.models.configuration import *
 
 config = context.config
 

@@ -56,11 +56,8 @@ export default function Login() {
       localStorage.setItem('refresh_token', response.data.refresh_token);
       window.location.href = '/dashboard';
     } catch (err: any) {
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
-      } else {
-        setError(t('auth.login.error'));
-      }
+      const msg = err.response?.data?.error?.message || err.response?.data?.detail;
+      setError(msg || t('auth.login.error'));
     }
   };
 
@@ -72,12 +69,12 @@ export default function Login() {
       if (useRecoveryCode) {
         response = await apiClient.post('/auth/recovery-login', {
           challenge_token: challengeToken,
-          recovery_code: data.totp_code,
+          recovery_code: data.totp_code.trim(),
         });
       } else {
         response = await apiClient.post('/auth/verify-2fa', {
           challenge_token: challengeToken,
-          totp_code: data.totp_code,
+          totp_code: data.totp_code.trim(),
         });
       }
 
@@ -85,11 +82,13 @@ export default function Login() {
       localStorage.setItem('refresh_token', response.data.refresh_token);
       window.location.href = '/dashboard';
     } catch (err: any) {
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
-      } else {
-        setError(useRecoveryCode ? 'Invalid recovery code' : 'Invalid 2FA code');
-      }
+      const msg = err.response?.data?.error?.message || err.response?.data?.detail;
+      setError(
+        msg ||
+          (useRecoveryCode
+            ? t('auth.twoFactor.invalidRecoveryCode')
+            : t('auth.twoFactor.invalidCode'))
+      );
     }
   };
 
@@ -98,7 +97,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-zinc-50 relative">
+    <div className="flex h-screen items-center justify-center bg-zinc-50 relative p-4">
       <button
         onClick={toggleLanguage}
         className="absolute top-4 right-4 text-xs font-semibold px-3 py-1 bg-white border border-zinc-200 rounded-md hover:bg-zinc-100"
@@ -106,7 +105,7 @@ export default function Login() {
         {i18n.language === 'en' ? 'हिंदी' : 'English'}
       </button>
 
-      <div className="w-full max-w-sm p-8 bg-white/60 glass-panel border border-zinc-200 rounded-xl shadow-sm">
+      <div className="w-full max-w-[400px] mx-auto p-6 sm:p-8 bg-white/80 glass-panel border border-zinc-200 rounded-2xl shadow-sm">
         <h1 className="text-xl font-bold text-center mb-6 text-zinc-900">
           {t('auth.login.title')}
         </h1>
@@ -153,11 +152,11 @@ export default function Login() {
               <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3">
                 <ShieldAlert className="w-6 h-6" />
               </div>
-              <h2 className="text-lg font-bold text-zinc-900">Two-Factor Authentication</h2>
+              <h2 className="text-lg font-bold text-zinc-900">{t('auth.twoFactor.title')}</h2>
               <p className="text-xs text-zinc-500 mt-1">
                 {useRecoveryCode
-                  ? 'Enter one of your 8-character recovery codes.'
-                  : 'Enter the 6-digit code from your authenticator app.'}
+                  ? t('auth.twoFactor.recoverySubtitle')
+                  : t('auth.twoFactor.totpSubtitle')}
               </p>
             </div>
 
@@ -165,8 +164,8 @@ export default function Login() {
               <input
                 {...registerTotp('totp_code')}
                 type="text"
-                maxLength={useRecoveryCode ? 9 : 6}
-                placeholder={useRecoveryCode ? 'XXXX-XXXX' : '000000'}
+                maxLength={useRecoveryCode ? 19 : 6}
+                placeholder={useRecoveryCode ? 'ABCD-EFGH' : '000000'}
                 className={`w-full px-4 py-3 text-center tracking-[0.5em] font-mono text-xl border border-zinc-300 rounded-lg focus:outline-none focus:border-mehndi-500 focus:ring-1 focus:ring-mehndi-500 ${useRecoveryCode ? 'tracking-[0.2em]' : ''}`}
                 autoComplete="one-time-code"
                 autoFocus
@@ -177,7 +176,7 @@ export default function Login() {
               disabled={isTotpSubmitting}
               className="w-full py-2 bg-mehndi-600 text-white rounded-lg text-sm font-bold hover:bg-mehndi-700 disabled:opacity-50 transition-colors"
             >
-              {isTotpSubmitting ? 'Verifying...' : 'Verify Code'}
+              {isTotpSubmitting ? t('auth.twoFactor.verifying') : t('auth.twoFactor.verifyCode')}
             </button>
             <div className="flex gap-2 mt-2">
               <button
@@ -189,14 +188,16 @@ export default function Login() {
                 }}
                 className="flex-1 py-2 bg-white text-zinc-600 border border-zinc-200 rounded-lg text-xs font-semibold hover:bg-zinc-50 transition-colors"
               >
-                {useRecoveryCode ? 'Use Authenticator' : 'Use Recovery Code'}
+                {useRecoveryCode
+                  ? t('auth.twoFactor.useAuthenticator')
+                  : t('auth.twoFactor.useRecoveryCode')}
               </button>
               <button
                 type="button"
                 onClick={() => setChallengeToken(null)}
                 className="flex-1 py-2 bg-white text-zinc-600 border border-zinc-200 rounded-lg text-xs font-semibold hover:bg-zinc-50 transition-colors"
               >
-                Cancel
+                {t('common.actions.cancel')}
               </button>
             </div>
           </form>

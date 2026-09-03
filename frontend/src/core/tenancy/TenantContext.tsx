@@ -30,7 +30,7 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   const [currentTenant, setCurrentTenant] = useState<TenantInfo | null>(null);
   const [availableTenants, setAvailableTenants] = useState<AvailableTenant[]>([]);
@@ -38,16 +38,25 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // For now, derive basic tenant info from the user object.
-      // In a real app, this might fetch from a `/users/me/tenants` endpoint.
+      const userSchools = user.schools || [];
+      const savedSchoolId = localStorage.getItem('selected_school_id');
+      const matchedSchool = userSchools.find((s) => s.id === savedSchoolId);
+      const activeSchool = matchedSchool || userSchools[0];
+      const activeSchoolId = activeSchool?.id || user.school_id || '';
+
+      if (activeSchoolId) {
+        localStorage.setItem('selected_school_id', activeSchoolId);
+      }
+
       const initialSlug = localStorage.getItem('tenant_slug') || user.tenant_id || 'default';
+      localStorage.setItem('tenant_slug', initialSlug);
 
       const defaultTenant: TenantInfo = {
-        schoolId: user.tenant_id,
+        schoolId: activeSchoolId,
         tenantSlug: initialSlug,
-        schoolName: `School (${initialSlug})`,
+        schoolName: activeSchool?.name || `School (${initialSlug})`,
         lifecycleStatus: 'ACTIVE',
-        roles: ['OWNER'],
+        roles: user.roles || ['OWNER'],
         entitlements: {
           'students.enabled': true,
           'attendance.enabled': true,
@@ -62,49 +71,47 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setCurrentTenant(defaultTenant);
-      setAvailableTenants([
-        {
-          schoolId: defaultTenant.schoolId,
-          tenantSlug: defaultTenant.tenantSlug,
-          schoolName: defaultTenant.schoolName,
-          isOwner: true,
-          lifecycleStatus: 'ACTIVE',
-          roles: ['OWNER'],
-        },
-      ]);
 
-      // Persist the active tenant slug
-      localStorage.setItem('tenant_slug', initialSlug);
-    } else {
+      const tenantsList: AvailableTenant[] = userSchools.map((s) => ({
+        schoolId: s.id,
+        tenantSlug: initialSlug,
+        schoolName: s.name,
+        isOwner: true,
+        lifecycleStatus: 'ACTIVE',
+        roles: user.roles || ['OWNER'],
+      }));
+
+      setAvailableTenants(
+        tenantsList.length > 0
+          ? tenantsList
+          : [
+              {
+                schoolId: defaultTenant.schoolId,
+                tenantSlug: defaultTenant.tenantSlug,
+                schoolName: defaultTenant.schoolName,
+                isOwner: true,
+                lifecycleStatus: 'ACTIVE',
+                roles: ['OWNER'],
+              },
+            ]
+      );
+    } else if (!isAuthLoading) {
       setCurrentTenant(null);
       setAvailableTenants([]);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, isAuthLoading]);
 
-  const switchTenant = async (tenantSlug: string) => {
+  const switchTenant = async (tenantSlug: string, schoolId?: string) => {
     setIsLoadingTenant(true);
     try {
-      const selected = availableTenants.find((t) => t.tenantSlug === tenantSlug);
+      const selected = availableTenants.find(
+        (t) => (schoolId ? t.schoolId === schoolId : t.tenantSlug === tenantSlug)
+      );
       if (selected) {
-        setCurrentTenant({
-          schoolId: selected.schoolId,
-          tenantSlug: selected.tenantSlug,
-          schoolName: selected.schoolName,
-          lifecycleStatus: selected.lifecycleStatus as any,
-          roles: selected.roles,
-          entitlements: {
-            'students.enabled': true,
-            'attendance.enabled': true,
-            'finance.enabled': true,
-            'academics.enabled': true,
-            'exams.enabled': true,
-            'payroll.enabled': true,
-            'transport.enabled': true,
-            'inventory.enabled': true,
-          },
-        });
-        localStorage.setItem('tenant_slug', tenantSlug);
-        // Reload page to reset all queries with new tenant context
+        if (selected.schoolId) {
+          localStorage.setItem('selected_school_id', selected.schoolId);
+        }
+        localStorage.setItem('tenant_slug', selected.tenantSlug);
         window.location.reload();
       }
     } finally {

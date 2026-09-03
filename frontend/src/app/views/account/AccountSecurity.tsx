@@ -8,12 +8,15 @@ import {
   ShieldAlert,
   CheckCircle2,
   Copy,
+  RefreshCw,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../../../lib/api-client';
+import { useAuth } from '../../../core/auth/AuthContext';
 
 export default function AccountSecurity() {
   const [activeTab, setActiveTab] = useState<'password' | '2fa' | 'sessions'>('password');
@@ -112,9 +115,10 @@ function ChangePasswordForm() {
       setStatus({ type: 'success', message: 'Password updated successfully.' });
       reset();
     } catch (err: any) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.detail;
       setStatus({
         type: 'error',
-        message: err.response?.data?.detail || 'Failed to update password.',
+        message: msg || 'Failed to update password.',
       });
     }
   };
@@ -183,6 +187,8 @@ function ChangePasswordForm() {
 }
 
 function TwoFactorSetup() {
+  const { user } = useAuth();
+  const { t } = useTranslation();
   const [step, setStep] = useState<number>(0);
   const [setupData, setSetupData] = useState<{
     secret: string;
@@ -191,21 +197,29 @@ function TwoFactorSetup() {
   } | null>(null);
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(Boolean(user?.is_2fa_enabled));
+  const [copied, setCopied] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regeneratedCodes, setRegeneratedCodes] = useState<string[] | null>(null);
 
-  // Note: in a real app, you would check if 2FA is already enabled on mount
-  // We'll simulate by trying to setup, if it fails with 'already enabled', we show that state.
+  useEffect(() => {
+    if (user?.is_2fa_enabled !== undefined) {
+      setIsEnabled(Boolean(user.is_2fa_enabled));
+    }
+  }, [user?.is_2fa_enabled]);
 
   const beginSetup = async () => {
     try {
+      setError('');
       const res = await apiClient.post('/security/2fa/setup');
       setSetupData(res.data);
       setStep(1);
     } catch (err: any) {
-      if (err.response?.data?.detail === '2FA is already enabled') {
+      const msg = err.response?.data?.error?.message || err.response?.data?.detail;
+      if (msg === '2FA is already enabled') {
         setIsEnabled(true);
       } else {
-        setError('Failed to initiate 2FA setup');
+        setError(msg || 'Failed to initiate 2FA setup');
       }
     }
   };
@@ -215,39 +229,86 @@ function TwoFactorSetup() {
       setError('');
       await apiClient.post('/security/2fa/verify', { code });
       setIsEnabled(true);
-      setStep(0);
+      setStep(2); // Show newly generated recovery codes after verification
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid code');
+      const msg = err.response?.data?.error?.message || err.response?.data?.detail;
+      setError(msg || 'Invalid code');
+    }
+  };
+
+  const handleRegenerateCodes = async () => {
+    try {
+      setError('');
+      setIsRegenerating(true);
+      const res = await apiClient.post('/security/2fa/recovery-codes');
+      setRegeneratedCodes(res.data.recovery_codes);
+    } catch (err: any) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.detail;
+      setError(msg || 'Failed to regenerate recovery codes');
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
   const disable2FA = async () => {
     try {
+      setError('');
       await apiClient.delete('/security/2fa');
       setIsEnabled(false);
-    } catch {
-      setError('Failed to disable 2FA');
+      setStep(0);
+      setRegeneratedCodes(null);
+    } catch (err: any) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.detail;
+      setError(msg || 'Failed to disable 2FA');
     }
   };
 
-  if (isEnabled) {
+  // Step 2: Show recovery codes once after successful verification
+  if (step === 2) {
     return (
       <div>
-        <h2 className="text-lg font-bold text-zinc-900 mb-6">Two-Factor Authentication</h2>
-        <div className="flex items-start gap-4 p-5 bg-emerald-50 border border-emerald-200 rounded-xl">
-          <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+        <h2 className="text-lg font-bold text-zinc-900 mb-2">{t('auth.twoFactor.saveCodesTitle')}</h2>
+        <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl mb-6">
+          <h3 className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-amber-600" /> {t('auth.twoFactor.saveCodesTitle')}
+          </h3>
+          <p className="text-xs text-amber-800 mb-4 font-medium leading-relaxed">
+            {t('auth.twoFactor.saveCodesWarning')}
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 font-mono text-sm text-zinc-800 bg-white p-4 rounded-xl border border-amber-200 shadow-xs mb-4">
+            {setupData?.recovery_codes?.map((rc, i) => (
+              <div
+                key={i}
+                className="p-2.5 bg-zinc-50 rounded-lg text-center font-bold tracking-wider select-all border border-zinc-100"
+              >
+                {rc}
+              </div>
+            ))}
           </div>
-          <div>
-            <h3 className="font-bold text-emerald-900">2FA is Enabled</h3>
-            <p className="text-sm text-emerald-700 mt-1">
-              Your account is protected by an additional layer of security.
-            </p>
+          <div className="flex flex-wrap gap-3">
             <button
-              onClick={disable2FA}
-              className="mt-4 px-4 py-2 bg-white text-red-600 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+              type="button"
+              onClick={() => {
+                if (setupData?.recovery_codes) {
+                  navigator.clipboard.writeText(setupData.recovery_codes.join('\n'));
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }
+              }}
+              className="px-4 py-2 bg-white text-zinc-700 border border-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 flex items-center gap-1.5 transition-colors"
             >
-              Disable 2FA
+              <Copy className="w-3.5 h-3.5" />
+              {copied ? t('auth.twoFactor.copied') : t('auth.twoFactor.copyAll')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStep(0);
+                setSetupData(null);
+              }}
+              className="px-5 py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors"
+            >
+              {t('auth.twoFactor.codesSavedButton')}
             </button>
           </div>
         </div>
@@ -255,10 +316,89 @@ function TwoFactorSetup() {
     );
   }
 
+  if (isEnabled) {
+    return (
+      <div>
+        <h2 className="text-lg font-bold text-zinc-900 mb-6">{t('auth.twoFactor.title')}</h2>
+        <div className="flex items-start gap-4 p-5 bg-emerald-50 border border-emerald-200 rounded-xl mb-6">
+          <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-emerald-900">2FA is Enabled</h3>
+            <p className="text-sm text-emerald-700 mt-1">
+              Your account is protected by an additional layer of security.
+            </p>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <button
+                onClick={handleRegenerateCodes}
+                disabled={isRegenerating}
+                className="px-4 py-2 bg-white text-zinc-700 border border-zinc-200 rounded-lg text-sm font-semibold hover:bg-zinc-50 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                {isRegenerating ? t('auth.twoFactor.regenerating') : t('auth.twoFactor.regenerateCodes')}
+              </button>
+              <button
+                onClick={disable2FA}
+                className="px-4 py-2 bg-white text-red-600 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+              >
+                Disable 2FA
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
+
+        {regeneratedCodes && (
+          <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl">
+            <h3 className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-amber-600" /> {t('auth.twoFactor.saveCodesTitle')}
+            </h3>
+            <p className="text-xs text-amber-800 mb-4 font-medium leading-relaxed">
+              {t('auth.twoFactor.saveCodesWarning')}
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 font-mono text-sm text-zinc-800 bg-white p-4 rounded-xl border border-amber-200 shadow-xs mb-4">
+              {regeneratedCodes.map((rc, i) => (
+                <div
+                  key={i}
+                  className="p-2.5 bg-zinc-50 rounded-lg text-center font-bold tracking-wider select-all border border-zinc-100"
+                >
+                  {rc}
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(regeneratedCodes.join('\n'));
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="px-4 py-2 bg-white text-zinc-700 border border-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 flex items-center gap-1.5 transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {copied ? t('auth.twoFactor.copied') : t('auth.twoFactor.copyAll')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setRegeneratedCodes(null)}
+                className="px-5 py-2 bg-zinc-900 text-white rounded-lg text-xs font-bold hover:bg-zinc-800 transition-colors"
+              >
+                {t('auth.twoFactor.codesSavedButton')}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (step === 0) {
     return (
       <div>
-        <h2 className="text-lg font-bold text-zinc-900 mb-2">Two-Factor Authentication</h2>
+        <h2 className="text-lg font-bold text-zinc-900 mb-2">{t('auth.twoFactor.title')}</h2>
         <p className="text-zinc-500 text-sm mb-6 max-w-lg">
           Add an extra layer of security to your account. Once enabled, you'll be required to enter
           a code generated by your authenticator app (like Google Authenticator or Authy) when you
@@ -338,28 +478,6 @@ function TwoFactorSetup() {
           </div>
         </div>
       </div>
-
-      {setupData?.recovery_codes && (
-        <div className="mt-8 p-5 bg-amber-50 border border-amber-200 rounded-2xl">
-          <h3 className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-600" /> Save Your Recovery Codes
-          </h3>
-          <p className="text-xs text-amber-700 mb-3">
-            If you lose access to your authenticator app, you can use these 8 recovery codes to sign
-            in. Each code can only be used once. Store them securely.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 font-mono text-xs text-zinc-800 bg-white p-3 rounded-lg border border-amber-200">
-            {setupData.recovery_codes.map((rc, i) => (
-              <div
-                key={i}
-                className="p-1.5 bg-zinc-50 rounded text-center font-bold tracking-wider select-all"
-              >
-                {rc}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

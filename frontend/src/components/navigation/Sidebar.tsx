@@ -16,13 +16,15 @@ import {
   ShieldCheck,
   ServerCog,
   Sparkles,
+  Settings,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { hasEntitlement } = useTenant();
 
   const businessNav = [
+    { name: 'Configuration', path: '/configuration', icon: Settings, entitlement: null, permission: 'settings.manage' },
     {
       name: 'Students & Admissions',
       path: '/students',
@@ -89,7 +91,9 @@ export const Sidebar: React.FC = () => {
           <span className="text-[10px] text-zinc-400">M01–M11</span>
         </div>
 
-        {businessNav.map((item) => {
+        {businessNav
+          .filter((item: any) => !item.permission || hasPermission(item.permission))
+          .map((item) => {
           const isEnabled = item.entitlement ? hasEntitlement(item.entitlement) : true;
           const Icon = item.icon;
 
@@ -118,40 +122,47 @@ export const Sidebar: React.FC = () => {
           );
         })}
         {/* Administration section */}
-        {/* We assume any user with access to admin roles or platform admin should see this. Since we don't have granular frontend role context in AuthContext yet, we use a basic entitlement or fallback to showing it, but for a true implementation we would check user.permissions if available. */}
-        <div className="pt-5 mt-4 border-t border-zinc-200">
-          <div className="px-3 pb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Administration
-            </span>
-          </div>
-          {[
-            { name: 'Users', path: '/admin/users', icon: Users },
-            { name: 'Roles & Permissions', path: '/admin/roles', icon: ShieldCheck },
-            { name: 'Security & Access', path: '/admin/security/overview', icon: ServerCog },
-            { name: 'Academic Years', path: '/admin/academic-years', icon: Award },
-            { name: 'Audit Logs', path: '/admin/audit-logs', icon: BookOpen },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                      : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
-                  }`
-                }
-              >
-                <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
-                <span>{item.name}</span>
-              </NavLink>
-            );
-          })}
-        </div>
+        {(() => {
+          const adminNav = [
+            { name: 'Users', path: '/admin/users', icon: Users, permission: 'users.manage' },
+            { name: 'Roles & Permissions', path: '/admin/roles', icon: ShieldCheck, permission: 'roles.manage' },
+            { name: 'Security & Access', path: '/admin/security/overview', icon: ServerCog, permission: 'security.manage' },
+            { name: 'Academic Years', path: '/admin/academic-years', icon: Award, permission: 'academic.manage' },
+            { name: 'Audit Logs', path: '/admin/audit-logs', icon: BookOpen, permission: 'users.manage' },
+          ].filter((item) => hasPermission(item.permission));
+
+          if (adminNav.length === 0) return null;
+
+          return (
+            <div className="pt-5 mt-4 border-t border-zinc-200">
+              <div className="px-3 pb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Administration
+                </span>
+              </div>
+              {adminNav.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isActive
+                          ? 'bg-zinc-100 text-zinc-900 font-semibold'
+                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
+                      }`
+                    }
+                  >
+                    <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
+                    <span>{item.name}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+          );
+        })()}
         {/* Platform Console section */}
         {user?.isPlatformAdmin && (
           <div className="pt-5 mt-4 border-t border-zinc-200">

@@ -9,13 +9,20 @@ export interface UserProfile {
   name: string;
   email: string;
   isPlatformAdmin: boolean;
+  isSuperadmin?: boolean;
   tenant_id: string;
+  school_id?: string;
+  schools?: { id: string; name: string; code?: string }[];
+  roles?: string[];
+  permissions?: string[];
+  is_2fa_enabled?: boolean;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasPermission: (permissionCode: string) => boolean;
   logout: () => void;
 }
 
@@ -30,27 +37,59 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     queryFn: async () => {
       const response = await apiClient.get('/auth/me');
       const data = response.data;
+      const userSchools = data.schools || [];
+      const savedSchoolId = localStorage.getItem('selected_school_id');
+      const matched = userSchools.find((s: any) => s.id === savedSchoolId);
+      const activeSchool = matched || userSchools[0];
+      const selectedSchoolId = activeSchool?.id || data.selected_school_id || data.school_id || '';
+
+      if (selectedSchoolId) {
+        localStorage.setItem('selected_school_id', selectedSchoolId);
+      }
+
       return {
         ...data,
-        name: data.first_name ? `${data.first_name} ${data.last_name}` : data.email.split('@')[0],
-        isPlatformAdmin: false, // Replace with actual role check if needed
+        name: data.first_name ? `${data.first_name} ${data.last_name || ''}`.trim() : data.email.split('@')[0],
+        isPlatformAdmin: Boolean(data.isSuperadmin),
+        isSuperadmin: Boolean(data.isSuperadmin),
+        school_id: selectedSchoolId,
+        selected_school_id: selectedSchoolId,
+        schools: userSchools,
+        roles: data.roles || [],
+        permissions: (data.permissions || []).map((p: string) => p.toLowerCase()),
+        is_2fa_enabled: Boolean(data.is_2fa_enabled),
       };
     },
     enabled: !!token,
     retry: false,
   });
 
+  const hasPermission = (permissionCode: string): boolean => {
+    if (!user) return false;
+    if (user.isSuperadmin || user.roles?.some((r) => r.toLowerCase() === 'superadmin')) {
+      return true;
+    }
+    return Boolean(user.permissions?.includes(permissionCode.toLowerCase()));
+  };
+
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('tenant_slug');
+    localStorage.removeItem('selected_school_id');
     queryClient.clear();
     window.location.href = '/login';
   };
 
   return (
     <AuthContext.Provider
-      value={{ user: user || null, isAuthenticated: !!user, isLoading, logout }}
+      value={{
+        user: user || null,
+        isAuthenticated: !!user,
+        isLoading,
+        hasPermission,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

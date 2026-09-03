@@ -1,0 +1,488 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  domain    String?
+  isActive  Boolean   @default(true) @map("is_active")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  schools               School[]
+  roles                 Role[]
+  users                 User[]
+  numberSeries          NumberSeries[]
+  auditLogs             AuditLog[]
+  securityPolicy        SecurityPolicy?
+  userSessions          UserSession[]
+  ipRestrictions        IpRestriction[]
+  securityEvents        SecurityEvent[]
+  schoolConfigurations  SchoolConfiguration[]
+  brandingConfigurations BrandingConfiguration[]
+
+  @@map("tenants")
+}
+
+model School {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  code      String
+  name      String
+  isActive  Boolean   @default(true) @map("is_active")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant          Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYears   AcademicYear[]
+  userSchools     UserSchool[]
+  ipRestrictions  IpRestriction[]
+  configuration   SchoolConfiguration?
+  branding        BrandingConfiguration?
+
+  @@map("schools")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  description String?
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  isSystem  Boolean  @default(false) @map("is_system")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  email               String    @unique
+  hashedPassword      String    @map("hashed_password")
+  firstName           String    @map("first_name")
+  lastName            String?   @map("last_name")
+  isActive            Boolean   @default(true) @map("is_active")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  passwordChangedAt   DateTime? @map("password_changed_at")
+  isDeleted           Boolean   @default(false) @map("is_deleted")
+  deletedAt           DateTime? @map("deleted_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles           UserRole[]
+  userSchools         UserSchool[]
+  refreshTokens       RefreshToken[]
+  twoFactor           UserTwoFactor?
+  recoveryCodes       UserRecoveryCode[]
+  passwordHistory     UserPasswordHistory[]
+  sessions            UserSession[]
+  securityEvents      SecurityEvent[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model UserRole {
+  userId String @map("user_id") @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model UserSchool {
+  userId   String @map("user_id") @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@id([userId, schoolId])
+  @@map("user_schools")
+}
+
+model AcademicYear {
+  id        String    @id @default(uuid()) @db.Uuid
+  schoolId  String    @map("school_id") @db.Uuid
+  name      String
+  startDate DateTime  @map("start_date") @db.Date
+  endDate   DateTime  @map("end_date") @db.Date
+  isCurrent Boolean   @default(false) @map("is_current")
+  isClosed  Boolean   @default(false) @map("is_closed")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("academic_years")
+}
+
+model NumberSeries {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  schoolId      String?  @map("school_id") @db.Uuid
+  code          String
+  prefix        String?
+  suffix        String?
+  padding       Int      @default(4)
+  currentValue  Int      @default(0) @map("current_value")
+  resetStrategy String?  @map("reset_strategy")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("number_series")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String?  @map("tenant_id") @db.Uuid
+  schoolId     String?  @map("school_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  action       String
+  entityType   String   @map("entity_type")
+  entityId     String?  @map("entity_id")
+  beforeData   String?  @map("before_data")
+  afterData    String?  @map("after_data")
+  metadataInfo String?  @map("metadata_info")
+  ipAddress    String?  @map("ip_address")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  token      String   @unique
+  expiresAt  BigInt   @map("expires_at")
+  isRevoked  Boolean  @default(false) @map("is_revoked")
+  replacedBy String?  @map("replaced_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions UserSession[]
+
+  @@map("refresh_tokens")
+}
+
+model SecurityPolicy {
+  id                       String   @id @default(uuid()) @db.Uuid
+  tenantId                 String   @unique @map("tenant_id") @db.Uuid
+  passwordMinLength        Int      @default(8) @map("password_min_length")
+  passwordRequireUppercase Boolean  @default(true) @map("password_require_uppercase")
+  passwordRequireLowercase Boolean  @default(true) @map("password_require_lowercase")
+  passwordRequireNumber    Boolean  @default(true) @map("password_require_number")
+  passwordRequireSpecial   Boolean  @default(false) @map("password_require_special")
+  passwordHistoryCount     Int      @default(3) @map("password_history_count")
+  passwordExpiryDays       Int      @default(0) @map("password_expiry_days")
+  maxFailedAttempts        Int      @default(5) @map("max_failed_attempts")
+  lockoutMinutes           Int      @default(15) @map("lockout_minutes")
+  ipRestrictionMode        String   @default("DISABLED") @map("ip_restriction_mode")
+  require2faForAdmins      Boolean  @default(false) @map("require_2fa_for_admins")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("security_policies")
+}
+
+model UserTwoFactor {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @unique @map("user_id") @db.Uuid
+  totpSecret String   @map("totp_secret")
+  isActive   Boolean  @default(false) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_two_factor")
+}
+
+model UserRecoveryCode {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  hashedCode String    @map("hashed_code")
+  usedAt     DateTime? @map("used_at")
+  isActive   Boolean   @default(false) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_recovery_codes")
+}
+
+model UserPasswordHistory {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  hashedPassword String   @map("hashed_password")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_password_history")
+}
+
+model UserSession {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  refreshTokenId String?   @map("refresh_token_id") @db.Uuid
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  deviceCategory String?   @map("device_category")
+  lastActivityAt DateTime  @default(now()) @map("last_activity_at")
+  expiresAt      DateTime  @map("expires_at")
+  isRevoked      Boolean   @default(false) @map("is_revoked")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken RefreshToken? @relation(fields: [refreshTokenId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+model IpRestriction {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  schoolId    String?  @map("school_id") @db.Uuid
+  networkCidr String   @map("network_cidr")
+  ruleType    String   @map("rule_type")
+  isEnabled   Boolean  @default(true) @map("is_enabled")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("ip_restrictions")
+}
+
+model SecurityEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  eventType    String   @map("event_type")
+  severity     String   @default("INFO")
+  ipAddress    String?  @map("ip_address")
+  metadataInfo String?  @map("metadata_info")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("security_events")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model SchoolConfiguration {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  schoolId  String   @unique @map("school_id") @db.Uuid
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // School identity
+  legalName         String? @map("legal_name") @db.VarChar(200)
+  shortName         String? @map("short_name") @db.VarChar(100)
+  board             String  @default("OTHER") @db.VarChar(30)
+  affiliationNumber String? @map("affiliation_number") @db.VarChar(100)
+  udiseCode         String? @map("udise_code") @db.VarChar(50)
+  primaryPhone      String? @map("primary_phone") @db.VarChar(30)
+  secondaryPhone    String? @map("secondary_phone") @db.VarChar(30)
+  contactEmail      String? @map("contact_email") @db.VarChar(255)
+  website           String? @db.VarChar(255)
+  addressLine1      String? @map("address_line_1") @db.VarChar(255)
+  addressLine2      String? @map("address_line_2") @db.VarChar(255)
+  city              String? @db.VarChar(100)
+  state             String? @db.VarChar(100)
+  postalCode        String? @map("postal_code") @db.VarChar(20)
+  country           String  @default("IN") @db.VarChar(2)
+
+  // Academic
+  workingWeek            String  @default("MON_SAT") @map("working_week") @db.VarChar(20)
+  weekStart              Int     @default(1) @map("week_start")
+  termNaming             String  @default("TERM") @map("term_naming") @db.VarChar(30)
+  rollNumberScope        String  @default("CLASS_SECTION_YEAR") @map("roll_number_scope") @db.VarChar(30)
+  academicLockingEnabled Boolean @default(true) @map("academic_locking_enabled")
+
+  // Student Identity Formats
+  studentIdFormat       String @default("STU-{YYYY}-{SEQ:05}") @map("student_id_format") @db.VarChar(100)
+  admissionNumberFormat String @default("ADM-{YY}-{SEQ:04}") @map("admission_number_format") @db.VarChar(100)
+  rollNumberFormat      String @default("{SEQ:03}") @map("roll_number_format") @db.VarChar(100)
+
+  // Attendance
+  attendanceLockEnabled              Boolean @default(true) @map("attendance_lock_enabled")
+  attendanceLockHours                Int     @default(24) @map("attendance_lock_hours")
+  attendanceCorrectionAllowed        Boolean @default(true) @map("attendance_correction_allowed")
+  attendanceCorrectionReasonRequired Boolean @default(true) @map("attendance_correction_reason_required")
+  attendancePrincipalOverride        Boolean @default(true) @map("attendance_principal_override")
+  teacherGeofenceEnabled             Boolean @default(false) @map("teacher_geofence_enabled")
+  teacherGeofenceRadiusMeters        Int     @default(100) @map("teacher_geofence_radius_meters")
+
+  // Fees (Money Rule: Decimal for monetary/precision)
+  feeCurrency                        String  @default("INR") @map("fee_currency") @db.VarChar(3)
+  feePrecision                       Int     @default(2) @map("fee_precision")
+  feeRoundingRule                    String  @default("HALF_UP") @map("fee_rounding_rule") @db.VarChar(20)
+  allowPartialPayment                Boolean @default(true) @map("allow_partial_payment")
+  allowAdvancePayment                Boolean @default(false) @map("allow_advance_payment")
+  lateFeeEnabled                     Boolean @default(true) @map("late_fee_enabled")
+  lateFeeGraceDays                   Int     @default(0) @map("late_fee_grace_days")
+  autoGenerateReceipt                Boolean @default(true) @map("auto_generate_receipt")
+  receiptCancellationReasonRequired  Boolean @default(true) @map("receipt_cancellation_reason_required")
+  refundApprovalRequired             Boolean @default(true) @map("refund_approval_required")
+  concessionApprovalRequired         Boolean @default(true) @map("concession_approval_required")
+  scholarshipApprovalRequired        Boolean @default(true) @map("scholarship_approval_required")
+  allowedPaymentMethods              String  @default("CASH,BANK_TRANSFER,UPI,CHEQUE,MIXED") @map("allowed_payment_methods") @db.VarChar(100)
+
+  // Finance
+  fiscalYearStartMonth           Int     @default(4) @map("fiscal_year_start_month")
+  fiscalYearStartDay             Int     @default(1) @map("fiscal_year_start_day")
+  voucherApprovalRequired        Boolean @default(true) @map("voucher_approval_required")
+  backdatedTransactionsAllowed   Boolean @default(false) @map("backdated_transactions_allowed")
+  futureDatedTransactionsAllowed Boolean @default(false) @map("future_dated_transactions_allowed")
+  reversalReasonRequired         Boolean @default(true) @map("reversal_reason_required")
+  gstEnabled                     Boolean @default(false) @map("gst_enabled")
+  tdsEnabled                     Boolean @default(false) @map("tds_enabled")
+
+  // Exams (Money Rule: Decimal for passing percentages)
+  gradingMode                       String  @default("MARKS_GRADE") @map("grading_mode") @db.VarChar(20)
+  passingPercentage                 Decimal @default(35.00) @map("passing_percentage") @db.Decimal(5, 2)
+  maximumMarks                      Int     @default(100) @map("maximum_marks")
+  internalMarksEnabled              Boolean @default(true) @map("internal_marks_enabled")
+  practicalMarksEnabled             Boolean @default(false) @map("practical_marks_enabled")
+  graceMarksEnabled                 Boolean @default(false) @map("grace_marks_enabled")
+  maximumGraceMarks                 Int     @default(0) @map("maximum_grace_marks")
+  revaluationEnabled                Boolean @default(false) @map("revaluation_enabled")
+  rankCalculationEnabled            Boolean @default(true) @map("rank_calculation_enabled")
+  gpaEnabled                        Boolean @default(false) @map("gpa_enabled")
+  cgpaEnabled                       Boolean @default(false) @map("cgpa_enabled")
+  resultPublicationApprovalRequired Boolean @default(true) @map("result_publication_approval_required")
+  marksDecimalPrecision             Int     @default(2) @map("marks_decimal_precision")
+
+  // Promotion (Decimal for percentages)
+  automaticPromotionEnabled          Boolean @default(false) @map("automatic_promotion_enabled")
+  minimumAttendancePercentage        Decimal @default(75.00) @map("minimum_attendance_percentage") @db.Decimal(5, 2)
+  minimumPassingPercentage           Decimal @default(35.00) @map("minimum_passing_percentage") @db.Decimal(5, 2)
+  failedSubjectTolerance             Int     @default(0) @map("failed_subject_tolerance")
+  graceMarksConsidered               Boolean @default(true) @map("grace_marks_considered")
+  manualPromotionOverride            Boolean @default(true) @map("manual_promotion_override")
+  principalPromotionApprovalRequired Boolean @default(true) @map("principal_promotion_approval_required")
+  promotionLockingEnabled            Boolean @default(true) @map("promotion_locking_enabled")
+
+  // Localization
+  defaultLanguage String @default("en") @map("default_language") @db.VarChar(2)
+  timezone        String @default("Asia/Kolkata") @db.VarChar(64)
+  dateFormat      String @default("DD/MM/YYYY") @map("date_format") @db.VarChar(30)
+  timeFormat      String @default("12h") @map("time_format") @db.VarChar(10)
+  currencyDisplay String @default("symbol") @map("currency_display") @db.VarChar(20)
+
+  // Printing
+  paperSize                String  @default("A4") @map("paper_size") @db.VarChar(10)
+  printOrientation         String  @default("portrait") @map("print_orientation") @db.VarChar(15)
+  printLanguage            String  @default("en") @map("print_language") @db.VarChar(10)
+  printShowLogo            Boolean @default(true) @map("print_show_logo")
+  printShowAddress         Boolean @default(true) @map("print_show_address")
+  printShowContact         Boolean @default(true) @map("print_show_contact")
+  printShowTimestamp       Boolean @default(true) @map("print_show_timestamp")
+  printShowDocumentNumber  Boolean @default(true) @map("print_show_document_number")
+  signaturePlaceholders    Boolean @default(true) @map("signature_placeholders")
+  headerText               String? @map("header_text") @db.VarChar(255)
+  footerText               String? @map("footer_text") @db.VarChar(255)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("school_configurations")
+}
+
+model BrandingConfiguration {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  schoolId          String   @unique @map("school_id") @db.Uuid
+  logoFileId        String?  @map("logo_file_id") @db.VarChar(255)
+  logoStorageKey    String?  @map("logo_storage_key") @db.VarChar(500)
+  logoContentType   String?  @map("logo_content_type") @db.VarChar(100)
+  logoSize          Int?     @map("logo_size")
+  compactLogoFileId String?  @map("compact_logo_file_id") @db.VarChar(255)
+  faviconFileId     String?  @map("favicon_file_id") @db.VarChar(255)
+  primaryPrintColor String   @default("#4F642C") @map("primary_print_color") @db.VarChar(7)
+  accentPrintColor  String   @default("#85A34D") @map("accent_print_color") @db.VarChar(7)
+  letterheadText    String?  @map("letterhead_text") @db.VarChar(500)
+  footerText        String?  @map("footer_text") @db.VarChar(500)
+  version           Int      @default(1)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("branding_configurations")
+}

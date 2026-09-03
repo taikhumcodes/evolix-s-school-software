@@ -9,8 +9,8 @@ import {
   useCreateAcademicYear,
   useUpdateAcademicYear,
 } from '../../../lib/api/academic-years';
-
-const currentSchoolId = '11111111-1111-1111-1111-111111111111'; // Mocked tenant school ID
+import { useTenant } from '../../../core/tenancy/TenantContext';
+import { useAuth } from '../../../core/auth/AuthContext';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -27,6 +27,10 @@ export default function AcademicYearForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
+
+  const { currentTenant } = useTenant();
+  const { user } = useAuth();
+  const currentSchoolId = currentTenant?.schoolId || user?.school_id || '';
 
   const { data: years } = useAcademicYears(currentSchoolId);
   const createYear = useCreateAcademicYear();

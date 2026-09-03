@@ -16,6 +16,10 @@ apiClient.interceptors.request.use((config) => {
   if (tenantSlug) {
     config.headers['X-Tenant-Slug'] = tenantSlug;
   }
+  const schoolId = localStorage.getItem('selected_school_id');
+  if (schoolId) {
+    config.headers['X-School-Id'] = schoolId;
+  }
   return config;
 });
 

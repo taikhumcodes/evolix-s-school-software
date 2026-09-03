@@ -1,0 +1,19 @@
+{
+  "name": "evolix-school-erp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EVOLIX School ERP Multi-Tenant SaaS",
+  "scripts": {
+    "dev:api": "pnpm --filter evolix-school-api dev",
+    "dev:web": "pnpm --filter evolix-school-frontend dev",
+    "build:api": "pnpm --filter evolix-school-api build",
+    "build:web": "pnpm --filter evolix-school-frontend build",
+    "test:api": "pnpm --filter evolix-school-api test",
+    "typecheck:api": "pnpm --filter evolix-school-api typecheck",
+    "typecheck:web": "pnpm --filter evolix-school-frontend typecheck",
+    "prisma:generate": "pnpm --filter evolix-school-api prisma:generate",
+    "prisma:migrate": "pnpm --filter evolix-school-api prisma:migrate",
+    "prisma:seed": "pnpm --filter evolix-school-api prisma:seed"
+  },
+  "packageManager": "pnpm@11.15.0"
+}

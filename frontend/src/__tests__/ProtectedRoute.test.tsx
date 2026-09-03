@@ -15,6 +15,7 @@ const renderWithAuth = (isAuthenticated: boolean) => {
       isAuthenticated: true,
       isLoading: false,
       user: null,
+      hasPermission: vi.fn().mockReturnValue(true),
       logout: vi.fn(),
     });
   } else {
@@ -23,6 +24,7 @@ const renderWithAuth = (isAuthenticated: boolean) => {
       isAuthenticated: false,
       isLoading: false,
       user: null,
+      hasPermission: vi.fn().mockReturnValue(false),
       logout: vi.fn(),
     });
   }
