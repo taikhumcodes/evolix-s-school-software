@@ -110,6 +110,35 @@ model Tenant {
   payrollAdjustments           PayrollAdjustment[]
   payrollPayments              PayrollPayment[]
   employeeSeparations          EmployeeSeparation[]
+  vehicles                     Vehicle[]
+  vehicleDocuments             VehicleDocument[]
+  vehicleStaffAssignments      VehicleStaffAssignment[]
+  transportRoutes              TransportRoute[]
+  transportRouteStops          TransportRouteStop[]
+  transportRouteVehicleAssignments TransportRouteVehicleAssignment[]
+  studentTransportAssignments  StudentTransportAssignment[]
+  transportTrips               TransportTrip[]
+  vehicleOdometerLogs          VehicleOdometerLog[]
+  vehicleFuelLogs              VehicleFuelLog[]
+  vehicleMaintenanceLogs       VehicleMaintenanceLog[]
+  inventoryCategories          InventoryCategory[]
+  inventoryLocations           InventoryLocation[]
+  inventoryItems               InventoryItem[]
+  stockMovements               StockMovement[]
+  inventoryStockBalances       InventoryStockBalance[]
+  assets                       Asset[]
+  assetAssignments             AssetAssignment[]
+  assetMaintenances            AssetMaintenance[]
+  assetDisposals               AssetDisposal[]
+  visitors                     Visitor[]
+  visitorVisits                VisitorVisit[]
+  studentPickupReleases        StudentPickupRelease[]
+  activityCategories           ActivityCategory[]
+  schoolEvents                 SchoolEvent[]
+  eventCoordinators            EventCoordinator[]
+  eventParticipants            EventParticipant[]
+  eventAchievements            EventAchievement[]
+  eventExpenseLinks            EventExpenseLink[]
 
   @@map("tenants")
 }
@@ -209,6 +238,35 @@ model School {
   payrollAdjustments           PayrollAdjustment[]
   payrollPayments              PayrollPayment[]
   employeeSeparations          EmployeeSeparation[]
+  vehicles                     Vehicle[]
+  vehicleDocuments             VehicleDocument[]
+  vehicleStaffAssignments      VehicleStaffAssignment[]
+  transportRoutes              TransportRoute[]
+  transportRouteStops          TransportRouteStop[]
+  transportRouteVehicleAssignments TransportRouteVehicleAssignment[]
+  studentTransportAssignments  StudentTransportAssignment[]
+  transportTrips               TransportTrip[]
+  vehicleOdometerLogs          VehicleOdometerLog[]
+  vehicleFuelLogs              VehicleFuelLog[]
+  vehicleMaintenanceLogs       VehicleMaintenanceLog[]
+  inventoryCategories          InventoryCategory[]
+  inventoryLocations           InventoryLocation[]
+  inventoryItems               InventoryItem[]
+  stockMovements               StockMovement[]
+  inventoryStockBalances       InventoryStockBalance[]
+  assets                       Asset[]
+  assetAssignments             AssetAssignment[]
+  assetMaintenances            AssetMaintenance[]
+  assetDisposals               AssetDisposal[]
+  visitors                     Visitor[]
+  visitorVisits                VisitorVisit[]
+  studentPickupReleases        StudentPickupRelease[]
+  activityCategories           ActivityCategory[]
+  schoolEvents                 SchoolEvent[]
+  eventCoordinators            EventCoordinator[]
+  eventParticipants            EventParticipant[]
+  eventAchievements            EventAchievement[]
+  eventExpenseLinks            EventExpenseLink[]
 
   @@map("schools")
 }
@@ -323,6 +381,16 @@ model User {
   createdPayrollPayments      PayrollPayment[]          @relation("PayrollPaymentCreatedBy")
   initiatedSeparations        EmployeeSeparation[]      @relation("SeparationInitiatedBy")
   settledSeparations          EmployeeSeparation[]      @relation("SeparationSettledBy")
+  enteredOdometerLogs         VehicleOdometerLog[]
+  enteredFuelLogs             VehicleFuelLog[]
+  stockMovements              StockMovement[]
+  assignedAssets              AssetAssignment[]         @relation("AssetAssignedBy")
+  returnedAssets              AssetAssignment[]         @relation("AssetReturnedTo")
+  disposedAssets              AssetDisposal[]
+  checkedInVisits             VisitorVisit[]            @relation("VisitCheckedInBy")
+  checkedOutVisits            VisitorVisit[]            @relation("VisitCheckedOutBy")
+  releasedStudentPickups      StudentPickupRelease[]
+  createdSchoolEvents         SchoolEvent[]
 
   @@map("users")
 }
@@ -381,6 +449,8 @@ model AcademicYear {
   studentFeeAssignments     StudentFeeAssignment[]
   feeConcessions            FeeConcession[]
   feeInvoices               FeeInvoice[]
+  studentTransportAssignments StudentTransportAssignment[]
+  schoolEvents              SchoolEvent[]
 
   @@map("academic_years")
 }
@@ -800,6 +870,7 @@ model ClassSection {
   school  School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   class   ClassMaster   @relation(fields: [classId], references: [id], onDelete: Cascade)
   section SectionMaster @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  eventParticipants EventParticipant[]
 
   @@unique([classId, sectionId])
   @@index([schoolId, classId])
@@ -978,6 +1049,7 @@ model VehicleType {
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicles Vehicle[]
 
   @@index([tenantId, schoolId])
   @@map("vehicle_types")
@@ -1004,6 +1076,7 @@ model FeeHead {
   feeStructureItems FeeStructureItem[]
   feeInvoiceLines   FeeInvoiceLine[]
   feeConcessions    FeeConcession[]
+  studentTransportAssignments StudentTransportAssignment[]
 
   @@unique([schoolId, code])
   @@index([schoolId, isActive])
@@ -1050,6 +1123,9 @@ model Department {
   school       School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   designations Designation[]
   employees    Employee[]
+  receivedStockMovements StockMovement[]
+  assetAssignments       AssetAssignment[]
+  visitorVisits          VisitorVisit[]
 
   @@unique([schoolId, code])
   @@index([schoolId, isActive])
@@ -1236,6 +1312,10 @@ model Student {
   creditNotes          CreditNote[]
   feeRefunds           FeeRefund[]
   journalLines         JournalLine[]
+  transportAssignments StudentTransportAssignment[]
+  transportTripStudents TransportTripStudent[]
+  pickupReleases       StudentPickupRelease[]
+  eventParticipants    EventParticipant[]
 
   @@unique([schoolId, studentId])
   @@unique([schoolId, admissionNumber])
@@ -1283,6 +1363,7 @@ model Guardian {
   primaryFamilies Family[]           @relation("PrimaryGuardian")
   documents       GuardianDocument[]
   notes           GuardianNote[]
+  pickupReleases  StudentPickupRelease[]
 
   @@index([schoolId, status])
   @@index([schoolId, normalizedPhone])
@@ -2633,6 +2714,9 @@ model ExpenseBill {
   createdByUser     User              @relation("ExpenseBillCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
   lines             ExpenseBillLine[]
   payments          VendorPayment[]
+  vehicleMaintenanceLogs VehicleMaintenanceLog[]
+  assetMaintenances      AssetMaintenance[]
+  eventExpenseLinks      EventExpenseLink[]
 
   @@unique([schoolId, billNumber])
   @@index([tenantId, schoolId, billDate, status])
@@ -2970,6 +3054,13 @@ model Employee {
   paymentAllocations  PayrollPaymentAllocation[]
   separations         EmployeeSeparation[]
   journalLines        JournalLine[]
+  vehicleStaffAssignments VehicleStaffAssignment[]
+  drivenTransportTrips    TransportTrip[]          @relation("TripDriver")
+  conductedTransportTrips TransportTrip[]          @relation("TripConductor")
+  receivedStockMovements  StockMovement[]
+  assetAssignments        AssetAssignment[]
+  visitorMeetings         VisitorVisit[]
+  eventCoordinators       EventCoordinator[]
 
   @@unique([schoolId, employeeNumber])
   @@index([tenantId, schoolId, status])
@@ -3525,3 +3616,841 @@ model EmployeeSeparation {
   @@index([tenantId, schoolId, employeeId, status])
   @@map("employee_separations")
 }
+
+// ==========================================
+// MAJOR MODULE 09: TRANSPORT MANAGEMENT
+// ==========================================
+
+model Vehicle {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               String    @map("tenant_id") @db.Uuid
+  schoolId               String    @map("school_id") @db.Uuid
+  vehicleNumber          String    @map("vehicle_number") @db.VarChar(50)
+  registrationNumber     String    @map("registration_number") @db.VarChar(50)
+  normalizedRegistration String    @map("normalized_registration") @db.VarChar(50)
+  vehicleTypeId          String    @map("vehicle_type_id") @db.Uuid
+  make                   String?   @db.VarChar(100)
+  model                  String?   @db.VarChar(100)
+  manufacturingYear      Int?      @map("manufacturing_year")
+  seatingCapacity        Int       @default(40) @map("seating_capacity")
+  schoolOwned            Boolean   @default(true) @map("school_owned")
+  ownershipType          String    @default("SCHOOL_OWNED") @map("ownership_type") @db.VarChar(50) // SCHOOL_OWNED, CONTRACTED, LEASED, OTHER
+  ownerName              String?   @map("owner_name") @db.VarChar(100)
+  insuranceExpiryDate    DateTime? @map("insurance_expiry_date") @db.Date
+  fitnessExpiryDate      DateTime? @map("fitness_expiry_date") @db.Date
+  permitExpiryDate       DateTime? @map("permit_expiry_date") @db.Date
+  pollutionExpiryDate    DateTime? @map("pollution_expiry_date") @db.Date
+  currentOdometer        Int       @default(0) @map("current_odometer")
+  status                 String    @default("ACTIVE") @db.VarChar(30) // ACTIVE, IN_MAINTENANCE, OUT_OF_SERVICE, SOLD, ARCHIVED
+  archivedAt             DateTime? @map("archived_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant             Tenant                            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school             School                            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  vehicleType        VehicleType                       @relation(fields: [vehicleTypeId], references: [id], onDelete: Restrict)
+  documents          VehicleDocument[]
+  staffAssignments   VehicleStaffAssignment[]
+  routeAssignments   TransportRouteVehicleAssignment[]
+  studentAssignments StudentTransportAssignment[]
+  trips              TransportTrip[]
+  odometerLogs       VehicleOdometerLog[]
+  fuelLogs           VehicleFuelLog[]
+  maintenanceLogs    VehicleMaintenanceLog[]
+
+  @@unique([schoolId, normalizedRegistration])
+  @@index([tenantId, schoolId, status])
+  @@index([schoolId, vehicleNumber])
+  @@map("vehicles")
+}
+
+model VehicleDocument {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  schoolId       String    @map("school_id") @db.Uuid
+  vehicleId      String    @map("vehicle_id") @db.Uuid
+  documentType   String    @map("document_type") @db.VarChar(50) // REGISTRATION, INSURANCE, FITNESS, PERMIT, POLLUTION, CONTRACT, OTHER
+  documentNumber String?   @map("document_number") @db.VarChar(100)
+  title          String    @db.VarChar(150)
+  fileKey        String    @map("file_key") @db.VarChar(255)
+  fileName       String    @map("file_name") @db.VarChar(255)
+  fileType       String    @map("file_type") @db.VarChar(50)
+  fileSize       Int       @map("file_size")
+  issueDate      DateTime? @map("issue_date") @db.Date
+  expiryDate     DateTime? @map("expiry_date") @db.Date
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, vehicleId])
+  @@index([schoolId, expiryDate])
+  @@map("vehicle_documents")
+}
+
+model VehicleStaffAssignment {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  schoolId       String    @map("school_id") @db.Uuid
+  vehicleId      String    @map("vehicle_id") @db.Uuid
+  employeeId     String    @map("employee_id") @db.Uuid
+  assignmentRole String    @map("assignment_role") @db.VarChar(30) // DRIVER, CONDUCTOR, ATTENDANT
+  effectiveFrom  DateTime  @map("effective_from") @db.Date
+  effectiveTo    DateTime? @map("effective_to") @db.Date
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school   School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, vehicleId, isActive])
+  @@index([schoolId, employeeId, isActive])
+  @@map("vehicle_staff_assignments")
+}
+
+model TransportRoute {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  schoolId          String    @map("school_id") @db.Uuid
+  routeCode         String    @map("route_code") @db.VarChar(50)
+  routeName         String    @map("route_name") @db.VarChar(100)
+  description       String?   @db.VarChar(255)
+  startLocation     String    @map("start_location") @db.VarChar(150)
+  endLocation       String    @map("end_location") @db.VarChar(150)
+  estimatedDistance Decimal?  @map("estimated_distance") @db.Decimal(8, 2)
+  estimatedDuration Int?      @map("estimated_duration") // minutes
+  status            String    @default("ACTIVE") @db.VarChar(30) // ACTIVE, INACTIVE, ARCHIVED
+  archivedAt        DateTime? @map("archived_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant             Tenant                            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school             School                            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  stops              TransportRouteStop[]
+  vehicleAssignments TransportRouteVehicleAssignment[]
+  studentAssignments StudentTransportAssignment[]
+  trips              TransportTrip[]
+
+  @@unique([schoolId, routeCode])
+  @@index([tenantId, schoolId, status])
+  @@map("transport_routes")
+}
+
+model TransportRouteStop {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  schoolId   String   @map("school_id") @db.Uuid
+  routeId    String   @map("route_id") @db.Uuid
+  stopName   String   @map("stop_name") @db.VarChar(100)
+  sequence   Int
+  pickupTime String?  @map("pickup_time") @db.VarChar(20) // e.g. "07:30"
+  dropTime   String?  @map("drop_time") @db.VarChar(20)   // e.g. "14:15"
+  landmark   String?  @db.VarChar(255)
+  latitude   Decimal? @db.Decimal(10, 7)
+  longitude  Decimal? @db.Decimal(10, 7)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant             Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school             School                       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  route              TransportRoute               @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  pickupAssignments  StudentTransportAssignment[] @relation("PickupStop")
+  dropAssignments    StudentTransportAssignment[] @relation("DropStop")
+  pickupTripStudents TransportTripStudent[]       @relation("TripPickupStop")
+  dropTripStudents   TransportTripStudent[]       @relation("TripDropStop")
+
+  @@unique([routeId, sequence])
+  @@index([tenantId, schoolId, routeId, isActive])
+  @@map("transport_route_stops")
+}
+
+model TransportRouteVehicleAssignment {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  schoolId      String    @map("school_id") @db.Uuid
+  routeId       String    @map("route_id") @db.Uuid
+  vehicleId     String    @map("vehicle_id") @db.Uuid
+  shift         String    @default("BOTH") @db.VarChar(30) // MORNING, AFTERNOON, BOTH
+  departureTime String?   @map("departure_time") @db.VarChar(20)
+  arrivalTime   String?   @map("arrival_time") @db.VarChar(20)
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school  School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  route   TransportRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  vehicle Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, routeId, isActive])
+  @@index([schoolId, vehicleId, isActive])
+  @@map("transport_route_vehicle_assignments")
+}
+
+model StudentTransportAssignment {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  schoolId           String    @map("school_id") @db.Uuid
+  studentId          String    @map("student_id") @db.Uuid
+  academicYearId     String    @map("academic_year_id") @db.Uuid
+  routeId            String    @map("route_id") @db.Uuid
+  pickupStopId       String    @map("pickup_stop_id") @db.Uuid
+  dropStopId         String    @map("drop_stop_id") @db.Uuid
+  vehicleId          String?   @map("vehicle_id") @db.Uuid
+  shift              String    @default("BOTH") @db.VarChar(30) // MORNING, AFTERNOON, BOTH
+  effectiveFrom      DateTime  @map("effective_from") @db.Date
+  effectiveTo        DateTime? @map("effective_to") @db.Date
+  status             String    @default("ACTIVE") @db.VarChar(30) // ACTIVE, SUSPENDED, COMPLETED, CANCELLED
+  transportFeeHeadId String?   @map("transport_fee_head_id") @db.Uuid
+  feeAmount          Decimal?  @map("fee_amount") @db.Decimal(12, 2)
+  notes              String?   @db.VarChar(255)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school           School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student          Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear     AcademicYear       @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  route            TransportRoute     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  pickupStop       TransportRouteStop @relation("PickupStop", fields: [pickupStopId], references: [id], onDelete: Restrict)
+  dropStop         TransportRouteStop @relation("DropStop", fields: [dropStopId], references: [id], onDelete: Restrict)
+  vehicle          Vehicle?           @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  transportFeeHead FeeHead?           @relation(fields: [transportFeeHeadId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, schoolId, studentId, status])
+  @@index([schoolId, routeId, status])
+  @@index([schoolId, vehicleId, status])
+  @@map("student_transport_assignments")
+}
+
+model TransportTrip {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  schoolId              String    @map("school_id") @db.Uuid
+  routeId               String    @map("route_id") @db.Uuid
+  vehicleId             String    @map("vehicle_id") @db.Uuid
+  driverEmployeeId      String    @map("driver_employee_id") @db.Uuid
+  conductorEmployeeId   String?   @map("conductor_employee_id") @db.Uuid
+  tripDate              DateTime  @map("trip_date") @db.Date
+  tripType              String    @map("trip_type") @db.VarChar(30) // PICKUP, DROP, OTHER
+  shift                 String?   @db.VarChar(30) // MORNING, AFTERNOON, SPECIAL
+  startOdometer         Int?      @map("start_odometer")
+  endOdometer           Int?      @map("end_odometer")
+  startedAt             DateTime? @map("started_at")
+  completedAt           DateTime? @map("completed_at")
+  status                String    @default("PLANNED") @db.VarChar(30) // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  routeCodeSnapshot     String?   @map("route_code_snapshot") @db.VarChar(50)
+  routeNameSnapshot     String?   @map("route_name_snapshot") @db.VarChar(100)
+  vehicleNumberSnapshot String?   @map("vehicle_number_snapshot") @db.VarChar(50)
+  driverNameSnapshot    String?   @map("driver_name_snapshot") @db.VarChar(150)
+  notes                 String?   @db.VarChar(255)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school            School                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  route             TransportRoute         @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  vehicle           Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driverEmployee    Employee               @relation("TripDriver", fields: [driverEmployeeId], references: [id], onDelete: Restrict)
+  conductorEmployee Employee?              @relation("TripConductor", fields: [conductorEmployeeId], references: [id], onDelete: SetNull)
+  students          TransportTripStudent[]
+
+  @@index([tenantId, schoolId, tripDate, status])
+  @@index([schoolId, routeId, tripDate])
+  @@index([schoolId, vehicleId, tripDate])
+  @@map("transport_trips")
+}
+
+model TransportTripStudent {
+  id           String    @id @default(uuid()) @db.Uuid
+  tripId       String    @map("trip_id") @db.Uuid
+  studentId    String    @map("student_id") @db.Uuid
+  pickupStopId String?   @map("pickup_stop_id") @db.Uuid
+  dropStopId   String?   @map("drop_stop_id") @db.Uuid
+  status       String    @default("EXPECTED") @db.VarChar(30) // EXPECTED, BOARDED, NOT_BOARDED, DROPPED, ABSENT_FROM_TRIP
+  recordedAt   DateTime? @map("recorded_at")
+  notes        String?   @db.VarChar(255)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  trip       TransportTrip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  student    Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  pickupStop TransportRouteStop? @relation("TripPickupStop", fields: [pickupStopId], references: [id], onDelete: SetNull)
+  dropStop   TransportRouteStop? @relation("TripDropStop", fields: [dropStopId], references: [id], onDelete: SetNull)
+
+  @@unique([tripId, studentId])
+  @@index([tripId, status])
+  @@index([studentId])
+  @@map("transport_trip_students")
+}
+
+model VehicleOdometerLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  schoolId        String   @map("school_id") @db.Uuid
+  vehicleId       String   @map("vehicle_id") @db.Uuid
+  reading         Int
+  recordedAt      DateTime @map("recorded_at")
+  sourceType      String   @map("source_type") @db.VarChar(50) // TRIP, MAINTENANCE, FUEL, MANUAL, CORRECTION
+  reference       String?  @db.VarChar(100)
+  enteredByUserId String   @map("entered_by_user_id") @db.Uuid
+  remarks         String?  @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant        Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school        School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  enteredByUser User    @relation(fields: [enteredByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, vehicleId, recordedAt])
+  @@map("vehicle_odometer_logs")
+}
+
+model VehicleFuelLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  schoolId        String   @map("school_id") @db.Uuid
+  vehicleId       String   @map("vehicle_id") @db.Uuid
+  fuelDate        DateTime @map("fuel_date") @db.Date
+  quantity        Decimal  @db.Decimal(10, 2)
+  unit            String   @default("LITER") @db.VarChar(20)
+  amount          Decimal? @db.Decimal(12, 2)
+  odometer        Int?
+  vendor          String?  @db.VarChar(150)
+  receiptFileKey  String?  @map("receipt_file_key") @db.VarChar(255)
+  remarks         String?  @db.VarChar(255)
+  enteredByUserId String   @map("entered_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant        Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school        School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  enteredByUser User    @relation(fields: [enteredByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, vehicleId, fuelDate])
+  @@map("vehicle_fuel_logs")
+}
+
+model VehicleMaintenanceLog {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  schoolId            String    @map("school_id") @db.Uuid
+  vehicleId           String    @map("vehicle_id") @db.Uuid
+  serviceDate         DateTime  @map("service_date") @db.Date
+  odometer            Int?
+  maintenanceType     String    @map("maintenance_type") @db.VarChar(50) // ROUTINE, REPAIR, INSPECTION, TYRE, BATTERY, OTHER
+  description         String    @db.Text
+  vendor              String?   @db.VarChar(150)
+  cost                Decimal?  @db.Decimal(12, 2)
+  nextServiceDate     DateTime? @map("next_service_date") @db.Date
+  nextServiceOdometer Int?      @map("next_service_odometer")
+  linkedExpenseBillId String?   @map("linked_expense_bill_id") @db.Uuid
+  status              String    @default("COMPLETED") @db.VarChar(30) // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school            School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  vehicle           Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  linkedExpenseBill ExpenseBill? @relation(fields: [linkedExpenseBillId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, schoolId, vehicleId, serviceDate])
+  @@map("vehicle_maintenance_logs")
+}
+
+// ==========================================
+// MAJOR MODULE 09: INVENTORY & ASSET MANAGEMENT
+// ==========================================
+
+model InventoryCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  schoolId    String    @map("school_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  code        String    @db.VarChar(50)
+  description String?   @db.VarChar(255)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  items  InventoryItem[]
+
+  @@unique([schoolId, code])
+  @@index([tenantId, schoolId, isActive])
+  @@map("inventory_categories")
+}
+
+model InventoryLocation {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  schoolId    String    @map("school_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  code        String    @db.VarChar(50)
+  description String?   @db.VarChar(255)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant           Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school           School                  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  stockMovements   StockMovement[]
+  stockBalances    InventoryStockBalance[]
+  assets           Asset[]
+  assetAssignments AssetAssignment[]
+
+  @@unique([schoolId, code])
+  @@index([tenantId, schoolId, isActive])
+  @@map("inventory_locations")
+}
+
+model InventoryItem {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  schoolId          String    @map("school_id") @db.Uuid
+  categoryId        String    @map("category_id") @db.Uuid
+  itemCode          String    @map("item_code") @db.VarChar(50)
+  name              String    @db.VarChar(150)
+  description       String?   @db.Text
+  unitOfMeasure     String    @default("PCS") @map("unit_of_measure") @db.VarChar(30) // PCS, BOX, PACK, KG, LITER, METER, SET, OTHER
+  itemType          String    @default("CONSUMABLE") @map("item_type") @db.VarChar(30) // CONSUMABLE, NON_CONSUMABLE, ASSET_TRACKED
+  minimumStockLevel Decimal   @default(0) @map("minimum_stock_level") @db.Decimal(12, 3)
+  reorderLevel      Decimal?  @map("reorder_level") @db.Decimal(12, 3)
+  defaultUnitCost   Decimal?  @map("default_unit_cost") @db.Decimal(12, 2)
+  status            String    @default("ACTIVE") @db.VarChar(30) // ACTIVE, INACTIVE, ARCHIVED
+  archivedAt        DateTime? @map("archived_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant         Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school         School                  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  category       InventoryCategory       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  stockMovements StockMovement[]
+  stockBalances  InventoryStockBalance[]
+  assets         Asset[]
+
+  @@unique([schoolId, itemCode])
+  @@index([tenantId, schoolId, status])
+  @@index([schoolId, categoryId])
+  @@map("inventory_items")
+}
+
+model StockMovement {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  schoolId              String    @map("school_id") @db.Uuid
+  itemId                String    @map("item_id") @db.Uuid
+  locationId            String    @map("location_id") @db.Uuid
+  movementType          String    @map("movement_type") @db.VarChar(30) // OPENING, PURCHASE_RECEIPT, INWARD, ISSUE, RETURN, TRANSFER_OUT, TRANSFER_IN, ADJUSTMENT_IN, ADJUSTMENT_OUT, DAMAGE, LOSS, DISPOSAL
+  quantity              Decimal   @db.Decimal(12, 3)
+  unitCost              Decimal?  @map("unit_cost") @db.Decimal(12, 2)
+  totalCost             Decimal?  @map("total_cost") @db.Decimal(12, 2)
+  balanceAfter          Decimal   @map("balance_after") @db.Decimal(12, 3)
+  movementDate          DateTime  @default(now()) @map("movement_date")
+  referenceType         String?   @map("reference_type") @db.VarChar(50) // EMPLOYEE_ISSUE, DEPT_ISSUE, TRANSFER, ADJUSTMENT, PURCHASE, RETURN, DISPOSAL
+  referenceId           String?   @map("reference_id") @db.VarChar(100)
+  batchNumber           String?   @map("batch_number") @db.VarChar(100)
+  recipientEmployeeId   String?   @map("recipient_employee_id") @db.Uuid
+  recipientDepartmentId String?   @map("recipient_department_id") @db.Uuid
+  remarks               String?   @db.VarChar(255)
+  actorId               String    @map("actor_id") @db.Uuid
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school              School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  item                InventoryItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  location            InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  recipientEmployee   Employee?         @relation(fields: [recipientEmployeeId], references: [id], onDelete: SetNull)
+  recipientDepartment Department?       @relation(fields: [recipientDepartmentId], references: [id], onDelete: SetNull)
+  actor               User              @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, itemId, locationId, movementDate])
+  @@index([schoolId, referenceType, referenceId])
+  @@map("stock_movements")
+}
+
+model InventoryStockBalance {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  schoolId        String   @map("school_id") @db.Uuid
+  itemId          String   @map("item_id") @db.Uuid
+  locationId      String   @map("location_id") @db.Uuid
+  currentQuantity Decimal  @default(0) @map("current_quantity") @db.Decimal(12, 3)
+  lastMovementAt  DateTime @default(now()) @map("last_movement_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school   School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  item     InventoryItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  location InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  @@unique([itemId, locationId])
+  @@index([tenantId, schoolId, itemId])
+  @@index([schoolId, locationId])
+  @@map("inventory_stock_balances")
+}
+
+model Asset {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  schoolId           String    @map("school_id") @db.Uuid
+  inventoryItemId    String    @map("inventory_item_id") @db.Uuid
+  locationId         String    @map("location_id") @db.Uuid
+  assetTag           String    @map("asset_tag") @db.VarChar(50)
+  serialNumber       String?   @map("serial_number") @db.VarChar(100)
+  manufacturer       String?   @db.VarChar(100)
+  model              String?   @db.VarChar(100)
+  purchaseDate       DateTime? @map("purchase_date") @db.Date
+  purchaseCost       Decimal?  @map("purchase_cost") @db.Decimal(12, 2)
+  warrantyExpiryDate DateTime? @map("warranty_expiry_date") @db.Date
+  status             String    @default("AVAILABLE") @db.VarChar(30) // AVAILABLE, ASSIGNED, IN_MAINTENANCE, DAMAGED, LOST, DISPOSED, ARCHIVED
+  condition          String    @default("GOOD") @db.VarChar(50)
+  remarks            String?   @db.VarChar(255)
+  archivedAt         DateTime? @map("archived_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school        School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem      @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  location      InventoryLocation  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  assignments   AssetAssignment[]
+  maintenances  AssetMaintenance[]
+  disposals     AssetDisposal[]
+
+  @@unique([schoolId, assetTag])
+  @@index([tenantId, schoolId, status])
+  @@index([schoolId, serialNumber])
+  @@map("assets")
+}
+
+model AssetAssignment {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  schoolId          String    @map("school_id") @db.Uuid
+  assetId           String    @map("asset_id") @db.Uuid
+  employeeId        String?   @map("employee_id") @db.Uuid
+  departmentId      String?   @map("department_id") @db.Uuid
+  locationId        String?   @map("location_id") @db.Uuid
+  assignedAt        DateTime  @default(now()) @map("assigned_at")
+  expectedReturnDate DateTime? @map("expected_return_date") @db.Date
+  returnedAt        DateTime? @map("returned_at")
+  conditionOnIssue  String    @default("GOOD") @map("condition_on_issue") @db.VarChar(50)
+  conditionOnReturn String?   @map("condition_on_return") @db.VarChar(50)
+  remarks           String?   @db.VarChar(255)
+  isActive          Boolean   @default(true) @map("is_active")
+  assignedByUserId  String    @map("assigned_by_user_id") @db.Uuid
+  returnedToUserId  String?   @map("returned_to_user_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school         School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  asset          Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  employee       Employee?          @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  department     Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  location       InventoryLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  assignedByUser User               @relation("AssetAssignedBy", fields: [assignedByUserId], references: [id], onDelete: Cascade)
+  returnedToUser User?              @relation("AssetReturnedTo", fields: [returnedToUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, schoolId, assetId, isActive])
+  @@index([schoolId, employeeId, isActive])
+  @@index([schoolId, departmentId, isActive])
+  @@map("asset_assignments")
+}
+
+model AssetMaintenance {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  schoolId            String    @map("school_id") @db.Uuid
+  assetId             String    @map("asset_id") @db.Uuid
+  serviceDate         DateTime  @map("service_date") @db.Date
+  maintenanceType     String    @map("maintenance_type") @db.VarChar(50)
+  description         String    @db.Text
+  vendor              String?   @db.VarChar(150)
+  cost                Decimal?  @db.Decimal(12, 2)
+  linkedExpenseBillId String?   @map("linked_expense_bill_id") @db.Uuid
+  status              String    @default("COMPLETED") @db.VarChar(30)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school            School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  asset             Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  linkedExpenseBill ExpenseBill? @relation(fields: [linkedExpenseBillId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, schoolId, assetId, serviceDate])
+  @@map("asset_maintenances")
+}
+
+model AssetDisposal {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  schoolId         String   @map("school_id") @db.Uuid
+  assetId          String   @map("asset_id") @db.Uuid
+  disposalDate     DateTime @map("disposal_date") @db.Date
+  method           String   @db.VarChar(50) // SCRAP, SALE, DONATION, WRITE_OFF, OTHER
+  reason           String   @db.Text
+  valueReceived    Decimal? @map("value_received") @db.Decimal(12, 2)
+  approvedByUserId String   @map("approved_by_user_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  tenant         Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school         School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  asset          Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  approvedByUser User   @relation(fields: [approvedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, assetId])
+  @@map("asset_disposals")
+}
+
+// ==========================================
+// MAJOR MODULE 09: VISITOR & GATE MANAGEMENT
+// ==========================================
+
+model Visitor {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  schoolId           String    @map("school_id") @db.Uuid
+  name               String    @db.VarChar(150)
+  phone              String    @db.VarChar(30)
+  email              String?   @db.VarChar(150)
+  organization       String?   @db.VarChar(150)
+  address            String?   @db.VarChar(255)
+  photoFileKey       String?   @map("photo_file_key") @db.VarChar(255)
+  governmentIdType   String?   @map("government_id_type") @db.VarChar(50)
+  governmentIdLast4  String?   @map("government_id_last4") @db.VarChar(10)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school         School                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  visits         VisitorVisit[]
+  pickupReleases StudentPickupRelease[]
+
+  @@index([tenantId, schoolId, phone])
+  @@map("visitors")
+}
+
+model VisitorVisit {
+  id                      String    @id @default(uuid()) @db.Uuid
+  tenantId                String    @map("tenant_id") @db.Uuid
+  schoolId                String    @map("school_id") @db.Uuid
+  visitorId               String    @map("visitor_id") @db.Uuid
+  visitNumber             String    @map("visit_number") @db.VarChar(50)
+  purpose                 String    @db.VarChar(150)
+  personToMeetEmployeeId  String?   @map("person_to_meet_employee_id") @db.Uuid
+  departmentId            String?   @map("department_id") @db.Uuid
+  checkInAt               DateTime  @default(now()) @map("check_in_at")
+  checkOutAt              DateTime? @map("check_out_at")
+  vehicleNumber           String?   @map("vehicle_number") @db.VarChar(50)
+  numberOfVisitors        Int       @default(1) @map("number_of_visitors")
+  badgeNumber             String?   @map("badge_number") @db.VarChar(50)
+  remarks                 String?   @db.VarChar(255)
+  status                  String    @default("CHECKED_IN") @db.VarChar(30) // EXPECTED, CHECKED_IN, CHECKED_OUT, CANCELLED, DENIED
+  checkedInByUserId       String    @map("checked_in_by_user_id") @db.Uuid
+  checkedOutByUserId      String?   @map("checked_out_by_user_id") @db.Uuid
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant             Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school             School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  visitor            Visitor     @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  personToMeet       Employee?   @relation(fields: [personToMeetEmployeeId], references: [id], onDelete: SetNull)
+  department         Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  checkedInByUser    User        @relation("VisitCheckedInBy", fields: [checkedInByUserId], references: [id], onDelete: Cascade)
+  checkedOutByUser   User?       @relation("VisitCheckedOutBy", fields: [checkedOutByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([schoolId, visitNumber])
+  @@index([tenantId, schoolId, status, checkInAt])
+  @@index([schoolId, visitorId])
+  @@map("visitor_visits")
+}
+
+model StudentPickupRelease {
+  id                    String   @id @default(uuid()) @db.Uuid
+  tenantId              String   @map("tenant_id") @db.Uuid
+  schoolId              String   @map("school_id") @db.Uuid
+  studentId             String   @map("student_id") @db.Uuid
+  pickupSessionDate     DateTime @default(now()) @map("pickup_session_date") @db.Date
+  pickupSession         String   @default("AFTERNOON") @map("pickup_session") @db.VarChar(30) // MORNING, AFTERNOON, EMERGENCY, SPECIAL
+  pickupType            String   @map("pickup_type") @db.VarChar(30) // AUTHORIZED_GUARDIAN, AUTHORIZED_PERSON, EXCEPTION
+  guardianId            String?  @map("guardian_id") @db.Uuid
+  visitorId             String?  @map("visitor_id") @db.Uuid
+  authorizedPersonName  String?  @map("authorized_person_name") @db.VarChar(150)
+  authorizedPersonPhone String?  @map("authorized_person_phone") @db.VarChar(30)
+  releasedAt            DateTime @default(now()) @map("released_at")
+  releasedByUserId      String   @map("released_by_user_id") @db.Uuid
+  reason                String?  @db.VarChar(255)
+  isOverride            Boolean  @default(false) @map("is_override")
+  overrideReason        String?  @map("override_reason") @db.Text
+  status                String   @default("RELEASED") @db.VarChar(30)
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school         School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian       Guardian? @relation(fields: [guardianId], references: [id], onDelete: SetNull)
+  visitor        Visitor?  @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+  releasedByUser User      @relation(fields: [releasedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, studentId, pickupSessionDate, pickupSession])
+  @@map("student_pickup_releases")
+}
+
+// ==========================================
+// MAJOR MODULE 09: SCHOOL ACTIVITIES & EVENTS
+// ==========================================
+
+model ActivityCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  schoolId    String   @map("school_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  code        String   @db.VarChar(50)
+  description String?  @db.VarChar(255)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  events SchoolEvent[]
+
+  @@unique([schoolId, code])
+  @@index([tenantId, schoolId, isActive])
+  @@map("activity_categories")
+}
+
+model SchoolEvent {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  schoolId        String    @map("school_id") @db.Uuid
+  categoryId      String    @map("category_id") @db.Uuid
+  academicYearId  String?   @map("academic_year_id") @db.Uuid
+  eventCode       String    @map("event_code") @db.VarChar(50)
+  title           String    @db.VarChar(150)
+  description     String?   @db.Text
+  startDateTime   DateTime  @map("start_date_time")
+  endDateTime     DateTime  @map("end_date_time")
+  venue           String    @db.VarChar(150)
+  capacity        Int?
+  estimatedBudget Decimal?  @map("estimated_budget") @db.Decimal(12, 2)
+  status          String    @default("DRAFT") @db.VarChar(30) // DRAFT, PUBLISHED, IN_PROGRESS, COMPLETED, CANCELLED, ARCHIVED
+  archivedAt      DateTime? @map("archived_at")
+  createdByUserId String    @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school        School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  category      ActivityCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  academicYear  AcademicYear?      @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  createdByUser User               @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  coordinators  EventCoordinator[]
+  participants  EventParticipant[]
+  achievements  EventAchievement[]
+  expenseLinks  EventExpenseLink[]
+
+  @@unique([schoolId, eventCode])
+  @@index([tenantId, schoolId, startDateTime, status])
+  @@map("school_events")
+}
+
+model EventCoordinator {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  schoolId   String   @map("school_id") @db.Uuid
+  eventId    String   @map("event_id") @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  role       String?  @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school   School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  event    SchoolEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, employeeId])
+  @@index([tenantId, schoolId, eventId])
+  @@map("event_coordinators")
+}
+
+model EventParticipant {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  schoolId        String    @map("school_id") @db.Uuid
+  eventId         String    @map("event_id") @db.Uuid
+  studentId       String    @map("student_id") @db.Uuid
+  classSectionId  String?   @map("class_section_id") @db.Uuid
+  teamName        String?   @map("team_name") @db.VarChar(100)
+  houseName       String?   @map("house_name") @db.VarChar(100)
+  participantType String    @default("INDIVIDUAL") @map("participant_type") @db.VarChar(50)
+  status          String    @default("REGISTERED") @db.VarChar(30) // REGISTERED, CONFIRMED, ATTENDED, ABSENT, WITHDRAWN, DISQUALIFIED, COMPLETED
+  registeredAt    DateTime  @default(now()) @map("registered_at")
+  attendedAt      DateTime? @map("attended_at")
+  notes           String?   @db.VarChar(255)
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school       School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  event        SchoolEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  student      Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classSection ClassSection?      @relation(fields: [classSectionId], references: [id], onDelete: SetNull)
+  achievements EventAchievement[]
+
+  @@unique([eventId, studentId])
+  @@index([tenantId, schoolId, eventId, status])
+  @@index([schoolId, studentId])
+  @@map("event_participants")
+}
+
+model EventAchievement {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  eventId       String   @map("event_id") @db.Uuid
+  participantId String   @map("participant_id") @db.Uuid
+  position      String   @db.VarChar(50) // 1st Place, 2nd Place, 3rd Place, Winner, Runner-up, Participation, etc.
+  result        String?  @db.VarChar(100)
+  remarks       String?  @db.VarChar(255)
+  awardedAt     DateTime @default(now()) @map("awarded_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school      School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  event       SchoolEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, eventId])
+  @@map("event_achievements")
+}
+
+model EventExpenseLink {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  eventId       String   @map("event_id") @db.Uuid
+  expenseBillId String   @map("expense_bill_id") @db.Uuid
+  notes         String?  @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school      School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  event       SchoolEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  expenseBill ExpenseBill @relation(fields: [expenseBillId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, expenseBillId])
+  @@index([tenantId, schoolId, eventId])
+  @@map("event_expense_links")
+}
+

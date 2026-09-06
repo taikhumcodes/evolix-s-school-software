@@ -100,6 +100,16 @@ const PayrollTerminal = lazy(() => import('../app/views/hr/PayrollTerminal').the
 const PayslipsView = lazy(() => import('../app/views/hr/PayslipsView').then((m) => ({ default: m.PayslipsView })));
 const HrSettings = lazy(() => import('../app/views/hr/HrSettings').then((m) => ({ default: m.HrSettings })));
 
+// Module 09: School Operations Management Views
+const OperationsLayout = lazy(() => import('../app/views/operations/OperationsLayout').then((m) => ({ default: m.OperationsLayout })));
+const OperationsOverview = lazy(() => import('../app/views/operations/OperationsOverview').then((m) => ({ default: m.OperationsOverview })));
+const TransportView = lazy(() => import('../app/views/operations/TransportView').then((m) => ({ default: m.TransportView })));
+const InventoryView = lazy(() => import('../app/views/operations/InventoryView').then((m) => ({ default: m.InventoryView })));
+const AssetsView = lazy(() => import('../app/views/operations/AssetsView').then((m) => ({ default: m.AssetsView })));
+const GateView = lazy(() => import('../app/views/operations/GateView').then((m) => ({ default: m.GateView })));
+const EventsView = lazy(() => import('../app/views/operations/EventsView').then((m) => ({ default: m.EventsView })));
+const OperationsReportsView = lazy(() => import('../app/views/operations/OperationsReportsView').then((m) => ({ default: m.OperationsReportsView })));
+
 export default function AppRoutes() {
   return (
     <Suspense
@@ -257,6 +267,20 @@ export default function AppRoutes() {
               <Route path="settings" element={<HrSettings />} />
             </Route>
             <Route path="payroll" element={<Navigate to="/hr/payroll" replace />} />
+
+            {/* Module 09: School Operations Management */}
+            <Route path="operations" element={<OperationsLayout />}>
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<OperationsOverview />} />
+              <Route path="transport" element={<TransportView />} />
+              <Route path="inventory" element={<InventoryView />} />
+              <Route path="assets" element={<AssetsView />} />
+              <Route path="gate" element={<GateView />} />
+              <Route path="events" element={<EventsView />} />
+              <Route path="reports" element={<OperationsReportsView />} />
+            </Route>
+            <Route path="transport" element={<Navigate to="/operations/transport" replace />} />
+            <Route path="inventory" element={<Navigate to="/operations/inventory" replace />} />
 
             {/* Configuration area */}
             <Route element={<PermissionRoute permission="settings.manage" />}>

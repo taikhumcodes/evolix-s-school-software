@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "id": "1788707421510-e3",
+  "createdAt": 1788707421510,
+  "origin": "failed-assert",
+  "expected": "declared consequence",
+  "observed": "no element matched {\"text\":\"लॉग इन करें\"}",
+  "steps": [
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "testid",
+        "value": "e3",
+        "source": {
+          "file": "src/app/views/Login.tsx",
+          "line": 101,
+          "column": 6
+        }
+      },
+      "action": "click"
+    }
+  ]
+}

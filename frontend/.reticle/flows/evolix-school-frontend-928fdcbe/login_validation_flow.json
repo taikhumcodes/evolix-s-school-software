@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "name": "login_validation_flow",
+  "projectId": "evolix-school-frontend-928fdcbe",
+  "createdAt": 1788707563496,
+  "steps": [
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "role",
+        "role": "button",
+        "name": "हिंदी"
+      },
+      "args": {},
+      "action": "click"
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "role",
+        "role": "button",
+        "name": "English"
+      },
+      "args": {},
+      "action": "click"
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "component",
+        "component": "RenderedRoute",
+        "source": {
+          "file": "src/app/views/Login.tsx",
+          "line": 125,
+          "column": 14
+        }
+      },
+      "args": {
+        "value": "superadmin@evolix.local"
+      },
+      "action": "fill"
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "component",
+        "component": "RenderedRoute",
+        "source": {
+          "file": "src/app/views/Login.tsx",
+          "line": 135,
+          "column": 14
+        }
+      },
+      "args": {
+        "value": "WrongPassword123!"
+      },
+      "action": "fill"
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "role",
+        "role": "button",
+        "name": "Sign In"
+      },
+      "args": {},
+      "action": "click",
+      "expect": {
+        "net": {
+          "method": "POST",
+          "urlContains": "/auth/login",
+          "status": 401
+        }
+      }
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "role",
+        "role": "button",
+        "name": "Sign In"
+      },
+      "args": {},
+      "action": "click"
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "component",
+        "component": "RenderedRoute",
+        "source": {
+          "file": "src/app/views/Login.tsx",
+          "line": 125,
+          "column": 14
+        }
+      },
+      "args": {
+        "value": "admin@evolix.local"
+      },
+      "action": "fill"
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "component",
+        "component": "RenderedRoute",
+        "source": {
+          "file": "src/app/views/Login.tsx",
+          "line": 135,
+          "column": 14
+        }
+      },
+      "args": {
+        "value": "Password123!"
+      },
+      "action": "fill"
+    },
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "role",
+        "role": "button",
+        "name": "Sign In"
+      },
+      "args": {},
+      "action": "click"
+    }
+  ],
+  "startPath": "/login",
+  "intent": "User signs in with valid credentials, gets authenticated and navigates to dashboard",
+  "intentId": "flow:login_validation_flow"
+}

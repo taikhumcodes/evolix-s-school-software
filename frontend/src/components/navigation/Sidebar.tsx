@@ -10,10 +10,8 @@ import {
   BookOpen,
   Award,
   Briefcase,
-  Bus,
   FileBadge,
   MessageSquare,
-  Package,
   ShieldCheck,
   ServerCog,
   Sparkles,
@@ -97,15 +95,16 @@ export const Sidebar: React.FC = () => {
       permission: 'hr.employee.view',
       badge: 'M08',
     },
-    { name: t('navigation.transport', 'Transport Fleet'), path: '/transport', icon: Bus, entitlement: 'transport.enabled' },
+    {
+      name: t('navigation.operations', 'School Operations'),
+      path: '/operations',
+      icon: Layers,
+      entitlement: null,
+      permission: null,
+      badge: 'M09',
+    },
     { name: t('navigation.certificates', 'Certificates & TC'), path: '/lifecycle', icon: FileBadge, entitlement: null },
     { name: t('navigation.communication', 'Communication'), path: '/communication', icon: MessageSquare, entitlement: null },
-    {
-      name: t('navigation.inventory', 'Inventory & Assets'),
-      path: '/inventory',
-      icon: Package,
-      entitlement: 'inventory.enabled',
-    },
   ];
 
   return (

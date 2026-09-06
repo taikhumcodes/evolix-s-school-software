@@ -28,7 +28,7 @@ export function validateRequest(schemas: {
         }
       }
       if (schemas.body) {
-        req.body = await schemas.body.parseAsync(req.body);
+        req.body = await schemas.body.parseAsync(req.body || {});
       }
       next();
     } catch (err) {

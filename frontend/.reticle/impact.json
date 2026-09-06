@@ -1,0 +1,70 @@
+{
+  "counts": {
+    "calls": 20,
+    "verdicts": 8,
+    "passed": 4,
+    "failed": 4,
+    "unknown": 0,
+    "refusals": 0,
+    "marks": 1,
+    "sessions": 6,
+    "tokensReturned": 4982,
+    "drivingMs": 5792
+  },
+  "days": [
+    {
+      "date": "2026-09-06",
+      "counts": {
+        "calls": 20,
+        "verdicts": 8,
+        "passed": 4,
+        "failed": 4,
+        "unknown": 0,
+        "refusals": 0,
+        "marks": 1,
+        "sessions": 6,
+        "tokensReturned": 4982,
+        "drivingMs": 5792
+      }
+    }
+  ],
+  "records": {
+    "longestRunMs": 0,
+    "bestVerdictDay": 8,
+    "bestDefectDay": 4,
+    "streakDays": 1,
+    "bestStreakDays": 1
+  },
+  "savings": {
+    "tokens": {
+      "value": 7818,
+      "basis": "vs an agent reading the app through screenshots"
+    },
+    "minutes": {
+      "value": 16,
+      "basis": "vs one re-prompt cycle per defect caught"
+    }
+  },
+  "since": 1788702348836,
+  "defects": [
+    {
+      "at": 1788707521427,
+      "title": "Sign In",
+      "detail": "channels disagree about this action (ui-advanced-request-failed) even though the assertion passed"
+    },
+    {
+      "at": 1788707478195,
+      "title": "the declared consequence did not hold"
+    },
+    {
+      "at": 1788707462549,
+      "title": "the declared consequence did not hold"
+    },
+    {
+      "at": 1788707421536,
+      "title": "हिंदी",
+      "detail": "no element matched {\"text\":\"लॉग इन करें\"}",
+      "source": "src/app/views/Login.tsx:101"
+    }
+  ]
+}

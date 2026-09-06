@@ -40,6 +40,7 @@
     "academics": "Academics & Classes",
     "exams": "Examinations",
     "hr": "HR & Payroll",
+    "operations": "School Operations",
     "transport": "Transport Fleet",
     "certificates": "Certificates & TC",
     "communication": "Communication",
@@ -1479,6 +1480,53 @@
       "leaveLedger": "Leave Policies & Entitlements",
       "payrollTerminal": "Payroll Processing Terminal",
       "recentRuns": "Recent Payroll Cycles"
+    }
+  },
+  "operations": {
+    "nav": {
+      "overview": "Overview",
+      "transport": "Transport & Fleet",
+      "inventory": "Inventory & Supplies",
+      "assets": "Asset Register",
+      "gate": "Gate & Visitors",
+      "events": "Activities & Events",
+      "reports": "Reports & Exports"
+    },
+    "overview": {
+      "title": "School Operations & Facilities",
+      "subtitle": "Authoritative management of student transport routes, inventory ledger, tagged assets, gate safety, and school activities."
+    },
+    "transport": {
+      "title": "Transport & Fleet Management",
+      "subtitle": "Vehicles registry, route scheduling, seating capacity validation, and daily trips.",
+      "cardTitle": "Transport & Fleet"
+    },
+    "inventory": {
+      "title": "Inventory & Supplies Management",
+      "subtitle": "Authoritative double-entry stock ledger. Stock balances are strictly the signed sum of validated movements.",
+      "cardTitle": "Inventory & Supplies"
+    },
+    "assets": {
+      "title": "Fixed Asset Register",
+      "subtitle": "Atomic asset tagging via NumberSeries, custodial assignment tracking, and audited disposal.",
+      "cardTitle": "Fixed Asset Register"
+    },
+    "gate": {
+      "title": "Gate & Visitor Safety Register",
+      "subtitle": "Visitor passes, time-stamped check-in/out, and authoritative student pickup release verification.",
+      "cardTitle": "Gate & Visitors"
+    },
+    "events": {
+      "title": "School Activities & Events",
+      "subtitle": "Event scheduling, capacity concurrency control, student participation, achievements, and finance reference linking.",
+      "cardTitle": "Activities & Events"
+    },
+    "reports": {
+      "title": "Authoritative Operations Reports",
+      "subtitle": "Server-authoritative summaries, audit logs, and compliance CSV exports for all operational domains."
+    },
+    "invariants": {
+      "title": "5 Operations Integrity Guarantees Active"
     }
   }
 }

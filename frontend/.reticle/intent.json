@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "intents": {
+    "inline:switch-application-language-to-hindi-and-verify-344f1ff0": {
+      "id": "inline:switch-application-language-to-hindi-and-verify-344f1ff0",
+      "statement": "Switch application language to Hindi and verify translated login title",
+      "state": "bound",
+      "declaredAt": 1788707417382,
+      "binding": {
+        "kind": "text",
+        "contains": "लॉग इन करें"
+      }
+    },
+    "inline:switch-language-back-to-english-and-assert-sign-df46f6de": {
+      "id": "inline:switch-language-back-to-english-and-assert-sign-df46f6de",
+      "statement": "Switch language back to English and assert Sign In button appears",
+      "state": "proved",
+      "declaredAt": 1788707428379,
+      "binding": {
+        "kind": "text",
+        "contains": "Sign In"
+      },
+      "surface": {
+        "route": "/login",
+        "files": [
+          "src/app/views/Login.tsx"
+        ]
+      },
+      "provenBy": {
+        "verdictId": "reticle_act_and_wait:1788707428449",
+        "grade": "presence",
+        "at": 1788707428449
+      }
+    },
+    "inline:submit-invalid-credentials-and-verify-login-erro-db73e056": {
+      "id": "inline:submit-invalid-credentials-and-verify-login-erro-db73e056",
+      "statement": "Submit invalid credentials and verify login error response via net predicate",
+      "state": "proved",
+      "declaredAt": 1788707451959,
+      "binding": {
+        "kind": "net",
+        "method": "POST",
+        "urlContains": "/auth/login",
+        "status": 401
+      },
+      "surface": {
+        "route": "/login",
+        "files": [
+          "src/app/views/Login.tsx"
+        ]
+      },
+      "provenBy": {
+        "verdictId": "reticle_act_and_wait:1788707452095",
+        "grade": "net",
+        "at": 1788707452095
+      }
+    },
+    "inline:submit-login-with-invalid-credentials-and-verify-2d33e456": {
+      "id": "inline:submit-login-with-invalid-credentials-and-verify-2d33e456",
+      "statement": "Submit login with invalid credentials and verify error banner with 'Incorrect email or password' is shown",
+      "state": "bound",
+      "declaredAt": 1788707521311,
+      "binding": {
+        "kind": "text",
+        "contains": "Incorrect email or password"
+      }
+    },
+    "inline:authenticate-with-valid-credentials-and-verify-n-b38283e8": {
+      "id": "inline:authenticate-with-valid-credentials-and-verify-n-b38283e8",
+      "statement": "Authenticate with valid credentials and verify navigation to dashboard",
+      "state": "proved",
+      "declaredAt": 1788707550926,
+      "binding": {
+        "kind": "route",
+        "pathname": "/dashboard"
+      },
+      "surface": {
+        "route": "/dashboard",
+        "files": [
+          "src/app/views/Login.tsx"
+        ]
+      },
+      "provenBy": {
+        "verdictId": "reticle_act_and_wait:1788707551444",
+        "grade": "presence",
+        "at": 1788707551444
+      }
+    },
+    "flow:login_validation_flow": {
+      "id": "flow:login_validation_flow",
+      "statement": "User signs in with valid credentials, gets authenticated and navigates to dashboard",
+      "state": "proved",
+      "declaredAt": 1788707563499,
+      "binding": {
+        "flow": "login_validation_flow"
+      },
+      "surface": {
+        "flow": "login_validation_flow"
+      },
+      "provenBy": {
+        "verdictId": "flow_replay:login_validation_flow:1788714660767",
+        "grade": "asserted",
+        "at": 1788714660767
+      }
+    }
+  }
+}

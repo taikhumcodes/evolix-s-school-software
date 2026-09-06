@@ -3,7 +3,7 @@ import { AuthenticatedUser } from '../../middleware/auth.js';
 
 export interface GlobalSearchResult {
   id: string;
-  type: 'class' | 'section' | 'subject' | 'academic_year' | 'user' | 'role' | 'student' | 'admission' | 'guardian' | 'family' | 'page' | 'leave';
+  type: 'class' | 'section' | 'subject' | 'academic_year' | 'user' | 'role' | 'student' | 'admission' | 'guardian' | 'family' | 'page' | 'leave' | 'vehicle' | 'route' | 'inventory_item' | 'asset' | 'event' | 'visitor';
   category: string;
   title: string;
   subtitle: string;
@@ -604,6 +604,177 @@ export class SearchService {
             score: 75,
           });
         }
+      }
+    }
+
+    // 13. Operations: Vehicles (RBAC: transport.view | isSuperadmin)
+    if (isSuper || perms.has('transport.view')) {
+      const vehicles = await prisma.vehicle.findMany({
+        where: { tenantId, schoolId, archivedAt: null },
+        take: 20,
+      });
+      for (const v of vehicles) {
+        const fields = [v.registrationNumber, v.vehicleNumber, v.make, v.model, v.status];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(v.registrationNumber, v.vehicleNumber, [v.make, v.model], trimmed);
+          results.push({
+            id: v.id,
+            type: 'vehicle',
+            category: 'Transport Vehicles',
+            title: v.registrationNumber,
+            subtitle: `${v.make || ''} ${v.model || ''} • Capacity: ${v.seatingCapacity} • Status: ${v.status}`.trim(),
+            code: v.vehicleNumber || undefined,
+            url: `/operations/transport?vehicle=${v.id}`,
+            score: score + 80,
+          });
+        }
+      }
+
+      // Routes
+      const routes = await prisma.transportRoute.findMany({
+        where: { tenantId, schoolId, archivedAt: null },
+        take: 20,
+      });
+      for (const r of routes) {
+        const fields = [r.routeName, r.routeCode, r.startLocation, r.endLocation, r.status];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(r.routeName, r.routeCode, [r.startLocation, r.endLocation], trimmed);
+          results.push({
+            id: r.id,
+            type: 'route',
+            category: 'Transport Routes',
+            title: `${r.routeName} (${r.routeCode})`,
+            subtitle: `${r.startLocation} ➔ ${r.endLocation} • Status: ${r.status}`,
+            code: r.routeCode,
+            url: `/operations/transport?route=${r.id}`,
+            score: score + 80,
+          });
+        }
+      }
+    }
+
+    // 14. Operations: Inventory Items (RBAC: inventory.view | isSuperadmin)
+    if (isSuper || perms.has('inventory.view')) {
+      const items = await prisma.inventoryItem.findMany({
+        where: { tenantId, schoolId, status: { not: 'ARCHIVED' } },
+        include: { category: true },
+        take: 20,
+      });
+      for (const item of items) {
+        const fields = [item.name, item.itemCode, item.category.name, item.unitOfMeasure, item.itemType];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(item.name, item.itemCode, [item.category.name], trimmed);
+          results.push({
+            id: item.id,
+            type: 'inventory_item',
+            category: 'Inventory Items',
+            title: item.name,
+            subtitle: `${item.itemCode} • Category: ${item.category.name} • Unit: ${item.unitOfMeasure}`,
+            code: item.itemCode,
+            url: `/operations/inventory?item=${item.id}`,
+            score: score + 80,
+          });
+        }
+      }
+    }
+
+    // 15. Operations: Assets (RBAC: inventory.assets.view | inventory.view | isSuperadmin)
+    if (isSuper || perms.has('inventory.assets.view') || perms.has('inventory.view')) {
+      const assets = await prisma.asset.findMany({
+        where: { tenantId, schoolId, status: { not: 'ARCHIVED' } },
+        include: { inventoryItem: true, location: true },
+        take: 20,
+      });
+      for (const asset of assets) {
+        const fields = [asset.assetTag, asset.serialNumber, asset.inventoryItem.name, asset.location.name, asset.status];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(asset.assetTag, asset.serialNumber, [asset.inventoryItem.name], trimmed);
+          results.push({
+            id: asset.id,
+            type: 'asset',
+            category: 'Fixed Assets',
+            title: `${asset.inventoryItem.name} (${asset.assetTag})`,
+            subtitle: `Location: ${asset.location.name} • Status: ${asset.status}`,
+            code: asset.assetTag,
+            url: `/operations/assets?asset=${asset.id}`,
+            score: score + 80,
+          });
+        }
+      }
+    }
+
+    // 16. Operations: Events (RBAC: events.view | isSuperadmin)
+    if (isSuper || perms.has('events.view')) {
+      const events = await prisma.schoolEvent.findMany({
+        where: { tenantId, schoolId, status: { not: 'ARCHIVED' } },
+        include: { category: true },
+        take: 20,
+      });
+      for (const evt of events) {
+        const fields = [evt.title, evt.eventCode, evt.category.name, evt.venue, evt.status];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(evt.title, evt.eventCode, [evt.category.name, evt.venue], trimmed);
+          results.push({
+            id: evt.id,
+            type: 'event',
+            category: 'School Events',
+            title: evt.title,
+            subtitle: `${evt.eventCode} • Venue: ${evt.venue} • Status: ${evt.status}`,
+            code: evt.eventCode,
+            url: `/operations/events?event=${evt.id}`,
+            score: score + 80,
+          });
+        }
+      }
+    }
+
+    // 17. Operations: Visitors (STRICT PRIVACY: ONLY gate.view | isSuperadmin)
+    // Amendment 42 & 47: Global Search must NOT expose visitor info to users lacking gate permissions!
+    if (isSuper || perms.has('gate.view')) {
+      const visitors = await prisma.visitor.findMany({
+        where: { tenantId, schoolId },
+        take: 15,
+      });
+      for (const v of visitors) {
+        const fields = [v.name, v.phone, v.organization];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(v.name, null, [v.phone, v.organization], trimmed);
+          results.push({
+            id: v.id,
+            type: 'visitor',
+            category: 'Gate Visitors',
+            title: v.name,
+            subtitle: `${v.organization ? `${v.organization} • ` : ''}${v.phone}`,
+            url: `/operations/gate?visitor=${v.id}`,
+            score: score + 75,
+          });
+        }
+      }
+    }
+
+    // 18. Operations Navigation Pages
+    const operationsPages = [
+      { id: 'page-ops-overview', title: 'School Operations Overview', subtitle: 'Transport, Inventory, Gate, and Events Dashboard', url: '/operations/overview', terms: ['operations', 'school operations', 'facility'] },
+      { id: 'page-ops-transport', title: 'Transport Management', subtitle: 'Vehicles, routes, stops, schedules, and trips', url: '/operations/transport', terms: ['transport', 'bus', 'vehicle', 'route', 'driver'] },
+      { id: 'page-ops-inventory', title: 'Inventory & Stock Management', subtitle: 'Stock ledger, inward, issue, transfer, items', url: '/operations/inventory', terms: ['inventory', 'stock', 'warehouse', 'supplies', 'consumables'] },
+      { id: 'page-ops-assets', title: 'Asset Management Register', subtitle: 'Fixed assets, tags, assignment, maintenance, disposal', url: '/operations/assets', terms: ['asset', 'equipment', 'tag', 'fixed asset', 'maintenance'] },
+      { id: 'page-ops-gate', title: 'Gate & Visitor Management', subtitle: 'Visitor passes, entry logs, and student pickup authorization', url: '/operations/gate', terms: ['gate', 'visitor', 'pickup', 'security', 'guard'] },
+      { id: 'page-ops-events', title: 'School Activities & Events', subtitle: 'Event schedule, participant registration, achievements', url: '/operations/events', terms: ['event', 'activity', 'sports', 'competition', 'annual function'] },
+      { id: 'page-ops-reports', title: 'Operations Reports', subtitle: 'Transport, inventory, asset, visitor, and event CSV reports', url: '/operations/reports', terms: ['operations report', 'transport report', 'inventory report'] },
+    ];
+
+    for (const page of operationsPages) {
+      const match = page.terms.some((term) => normQuery.includes(term) || term.includes(normQuery) || tokens.some((t) => term.includes(t)));
+      if (match) {
+        results.push({
+          id: page.id,
+          type: 'page',
+          category: 'Navigation',
+          title: page.title,
+          subtitle: page.subtitle,
+          url: page.url,
+          score: 85,
+        });
       }
     }
 

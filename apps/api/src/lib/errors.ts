@@ -99,15 +99,16 @@ export function errorHandler(
     return;
   }
 
-  // Handle custom AppError
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
+  // Handle custom AppError or error with statusCode
+  const statusCode = err instanceof AppError ? err.statusCode : (typeof err?.statusCode === 'number' ? err.statusCode : null);
+  if (statusCode) {
+    res.status(statusCode).json({
       ...(err.details || {}),
       message: err.message,
       error: {
-        code: err.code,
+        code: err.code || (statusCode === 400 ? 'BAD_REQUEST' : statusCode === 401 ? 'UNAUTHORIZED' : statusCode === 403 ? 'PERMISSION_DENIED' : statusCode === 404 ? 'NOT_FOUND' : statusCode === 409 ? 'CONFLICT' : statusCode === 422 ? 'VALIDATION_ERROR' : 'ERROR'),
         message: err.message,
-        details: err.details,
+        details: err.details || {},
       },
     });
     return;

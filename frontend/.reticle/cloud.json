@@ -1,0 +1,13 @@
+{
+  "projectId": "frontend",
+  "projectName": "frontend",
+  "orgId": "org_ce111343f7b54a00b6011999196af066",
+  "url": "https://app.reticle.sh",
+  "dashboardUrl": "https://app.reticle.sh/issues?project=frontend",
+  "sync": {
+    "runs": true,
+    "memory": true,
+    "flows": true
+  },
+  "verify": "local"
+}
