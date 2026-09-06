@@ -51,6 +51,7 @@ export class SecurityModuleService {
       data: {
         hashedPassword: newHash,
         passwordChangedAt: new Date(),
+        mustChangePassword: false,
       },
     });
 

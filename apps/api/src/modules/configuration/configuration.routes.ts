@@ -669,6 +669,8 @@ router.get('/history', requirePermissions(['settings.manage']), async (req: Requ
 
     const action = req.query.action as string | undefined;
     const userId = req.query.user_id as string | undefined;
+    const dateFrom = req.query.date_from as string | undefined;
+    const dateTo = req.query.date_to as string | undefined;
 
     const where: any = {
       tenantId: req.user!.tenantId,
@@ -682,6 +684,11 @@ router.get('/history', requirePermissions(['settings.manage']), async (req: Requ
     if (schoolId) where.schoolId = schoolId;
     if (action) where.action = action;
     if (userId) where.userId = userId;
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) where.createdAt.lte = new Date(dateTo);
+    }
 
     const history = await prisma.auditLog.findMany({
       where,

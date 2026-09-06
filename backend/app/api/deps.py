@@ -83,7 +83,15 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
     
-    stmt = select(User).options(selectinload(User.roles).selectinload(Role.permissions)).where(User.id == user_id)
+    stmt = (
+        select(User)
+        .options(
+            selectinload(User.roles).selectinload(Role.permissions),
+            selectinload(User.schools),
+            selectinload(User.tenant),
+        )
+        .where(User.id == user_id)
+    )
     result = await db.execute(stmt)
     user = result.scalars().first()
     if user is None:
@@ -105,13 +113,10 @@ class require_permissions:
     async def __call__(self, user: User = Depends(get_current_user)):
         user_perms = set()
         for role in user.roles:
-            print("ROLE_NAME:", role.name)
-            if role.name.lower() == 'superadmin':
+            if role.name.lower() in ['superadmin', 'owner', 'principle', 'admin']:
                 return True
             for perm in role.permissions:
                 user_perms.add(perm.code.lower())
-        print("USER_PERMS:", user_perms)
-        print("REQUIRED:", self.permissions)
         for p in self.permissions:
             if p.lower() not in user_perms:
                 raise HTTPException(status_code=403, detail="Not enough permissions")

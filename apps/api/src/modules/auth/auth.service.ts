@@ -142,6 +142,7 @@ export class AuthService {
       access_token: accessToken,
       refresh_token: refreshToken,
       token_type: 'bearer',
+      must_change_password: user.mustChangePassword,
     };
   }
 

@@ -8,6 +8,13 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+  // Strip duplicate /api/v1 prefix if a caller includes it while baseURL is already /api/v1
+  if (config.url?.startsWith('/api/v1/')) {
+    config.url = config.url.substring('/api/v1'.length);
+  } else if (config.url === '/api/v1') {
+    config.url = '/';
+  }
+
   const token = localStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

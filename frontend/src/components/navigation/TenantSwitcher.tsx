@@ -1,12 +1,30 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTenant } from '../../core/tenancy/TenantContext';
 import { Building2, ChevronDown, Check, Plus } from 'lucide-react';
 
 export const TenantSwitcher: React.FC = () => {
+  const navigate = useNavigate();
   const { currentTenant, availableTenants, switchTenant } = useTenant();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!currentTenant) return null;
+
+  // Prioritize Burhani and Emerald Academy, then sort alphabetically
+  const sortedTenants = [...availableTenants].sort((a, b) => {
+    const aName = (a.schoolName || '').toLowerCase();
+    const bName = (b.schoolName || '').toLowerCase();
+    const aBurhani = aName.includes('burhani');
+    const bBurhani = bName.includes('burhani');
+    const aEmerald = aName.includes('emerald');
+    const bEmerald = bName.includes('emerald');
+
+    if (aBurhani && !bBurhani) return -1;
+    if (!aBurhani && bBurhani) return 1;
+    if (aEmerald && !bEmerald) return -1;
+    if (!aEmerald && bEmerald) return 1;
+    return aName.localeCompare(bName);
+  });
 
   return (
     <div className="relative inline-block text-left">
@@ -39,14 +57,17 @@ export const TenantSwitcher: React.FC = () => {
               <span className="text-[10px] font-mono text-mehndi-500">Multi-Tenant</span>
             </div>
 
-            <div className="space-y-1.5 my-2">
-              {availableTenants.map((tenant) => {
-                const isSelected = tenant.tenantSlug === currentTenant.tenantSlug;
+            <div className="space-y-1.5 my-2 max-h-72 overflow-y-auto pr-1">
+              {sortedTenants.map((tenant) => {
+                const isSelected = tenant.schoolId
+                  ? tenant.schoolId === currentTenant.schoolId
+                  : tenant.tenantSlug === currentTenant.tenantSlug;
+
                 return (
                   <button
-                    key={tenant.tenantSlug}
+                    key={tenant.schoolId || tenant.tenantSlug}
                     onClick={() => {
-                      switchTenant(tenant.tenantSlug);
+                      switchTenant(tenant.tenantSlug, tenant.schoolId);
                       setIsOpen(false);
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-xl text-left text-sm transition-all cursor-pointer ${
@@ -78,9 +99,10 @@ export const TenantSwitcher: React.FC = () => {
             <div className="pt-2 border-t border-zinc-200 mt-2">
               <button
                 onClick={() => {
-                  alert('Tenant registration wizard flow initiated.');
+                  setIsOpen(false);
+                  navigate('/admin/setup-wizard');
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-mehndi-700 bg-mehndi-50 hover:bg-mehndi-100 border border-mehndi-200 transition-all"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-mehndi-700 bg-mehndi-50 hover:bg-mehndi-100 border border-mehndi-200 transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Register New School

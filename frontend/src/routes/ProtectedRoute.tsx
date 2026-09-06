@@ -1,8 +1,9 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../core/auth/AuthContext';
+import ForcePasswordChange from '../app/views/account/ForcePasswordChange';
 
 export default function ProtectedRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const token = localStorage.getItem('access_token');
 
   // If there's no token, we can safely redirect immediately.
@@ -25,6 +26,11 @@ export default function ProtectedRoute() {
   // If the token is invalid and we finished loading, redirect.
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // If user is required to change their temporary password on first login, force them to do so
+  if (user?.must_change_password) {
+    return <ForcePasswordChange />;
   }
 
   return <Outlet />;

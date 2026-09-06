@@ -17,7 +17,9 @@ export default function AcademicYearsList() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">{t('admin.academicYears.list')}</h1>
-          <p className="text-xs text-zinc-500 mt-1">Manage school terms and current academic session</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            Manage school terms and current academic session
+          </p>
         </div>
         <Link
           to="/admin/academic-years/new"

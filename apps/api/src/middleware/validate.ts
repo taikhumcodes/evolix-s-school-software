@@ -9,10 +9,23 @@ export function validateRequest(schemas: {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (schemas.params) {
-        req.params = await schemas.params.parseAsync(req.params);
+        const parsedParams = await schemas.params.parseAsync(req.params);
+        try {
+          req.params = parsedParams;
+        } catch {
+          Object.assign(req.params, parsedParams);
+        }
       }
       if (schemas.query) {
-        req.query = await schemas.query.parseAsync(req.query);
+        const parsedQuery = await schemas.query.parseAsync(req.query);
+        try {
+          req.query = parsedQuery;
+        } catch {
+          for (const key of Object.keys(req.query)) {
+            delete (req.query as any)[key];
+          }
+          Object.assign(req.query, parsedQuery);
+        }
       }
       if (schemas.body) {
         req.body = await schemas.body.parseAsync(req.body);

@@ -18,6 +18,8 @@ const SENSITIVE_KEYS = new Set([
   'recovery_codes',
   'recoverycodes',
   'authorization',
+  'temporary_password',
+  'temporarypassword',
 ]);
 
 function redactData(data: any): string | null {

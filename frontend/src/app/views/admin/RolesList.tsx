@@ -3,14 +3,28 @@ import { useRoles, useDeleteRole } from '../../../lib/api/roles';
 import { Plus, Edit, Trash2, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { useToast } from '../../../components/ui/Toast';
+
 export default function RolesList() {
   const { t } = useTranslation('common');
+  const { toast, confirm } = useToast();
   const { data: roles, isLoading } = useRoles();
   const deleteRole = useDeleteRole();
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this role?')) {
-      await deleteRole.mutateAsync(id);
+    const ok = await confirm({
+      title: 'Delete Role',
+      message: 'Are you sure you want to delete this role?',
+      confirmText: 'Delete Role',
+      isDestructive: true,
+    });
+    if (ok) {
+      try {
+        await deleteRole.mutateAsync(id);
+        toast.success('Role deleted successfully.');
+      } catch (err: any) {
+        toast.error(err.response?.data?.error?.message || err.message || 'Failed to delete role.');
+      }
     }
   };
 

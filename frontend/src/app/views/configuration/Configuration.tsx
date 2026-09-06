@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, CheckCircle2, Image, Loader2, RefreshCw, Save, Settings } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Image,
+  Loader2,
+  RefreshCw,
+  Save,
+  Settings,
+} from 'lucide-react';
 import { useTenant } from '../../../core/tenancy/TenantContext';
 import {
   ConfigurationSection,

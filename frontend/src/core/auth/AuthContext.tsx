@@ -16,6 +16,7 @@ export interface UserProfile {
   roles?: string[];
   permissions?: string[];
   is_2fa_enabled?: boolean;
+  must_change_password?: boolean;
 }
 
 interface AuthContextType {
@@ -49,7 +50,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       return {
         ...data,
-        name: data.first_name ? `${data.first_name} ${data.last_name || ''}`.trim() : data.email.split('@')[0],
+        name: data.first_name
+          ? `${data.first_name} ${data.last_name || ''}`.trim()
+          : data.email.split('@')[0],
         isPlatformAdmin: Boolean(data.isSuperadmin),
         isSuperadmin: Boolean(data.isSuperadmin),
         school_id: selectedSchoolId,
@@ -58,6 +61,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         roles: data.roles || [],
         permissions: (data.permissions || []).map((p: string) => p.toLowerCase()),
         is_2fa_enabled: Boolean(data.is_2fa_enabled),
+        must_change_password: Boolean(data.must_change_password),
       };
     },
     enabled: !!token,

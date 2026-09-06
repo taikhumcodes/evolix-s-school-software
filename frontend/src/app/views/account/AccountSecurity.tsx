@@ -267,7 +267,9 @@ function TwoFactorSetup() {
   if (step === 2) {
     return (
       <div>
-        <h2 className="text-lg font-bold text-zinc-900 mb-2">{t('auth.twoFactor.saveCodesTitle')}</h2>
+        <h2 className="text-lg font-bold text-zinc-900 mb-2">
+          {t('auth.twoFactor.saveCodesTitle')}
+        </h2>
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl mb-6">
           <h3 className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-600" /> {t('auth.twoFactor.saveCodesTitle')}
@@ -336,7 +338,9 @@ function TwoFactorSetup() {
                 className="px-4 py-2 bg-white text-zinc-700 border border-zinc-200 rounded-lg text-sm font-semibold hover:bg-zinc-50 transition-colors flex items-center gap-2"
               >
                 <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
-                {isRegenerating ? t('auth.twoFactor.regenerating') : t('auth.twoFactor.regenerateCodes')}
+                {isRegenerating
+                  ? t('auth.twoFactor.regenerating')
+                  : t('auth.twoFactor.regenerateCodes')}
               </button>
               <button
                 onClick={disable2FA}
@@ -353,7 +357,8 @@ function TwoFactorSetup() {
         {regeneratedCodes && (
           <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl">
             <h3 className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-amber-600" /> {t('auth.twoFactor.saveCodesTitle')}
+              <ShieldAlert className="w-5 h-5 text-amber-600" />{' '}
+              {t('auth.twoFactor.saveCodesTitle')}
             </h3>
             <p className="text-xs text-amber-800 mb-4 font-medium leading-relaxed">
               {t('auth.twoFactor.saveCodesWarning')}

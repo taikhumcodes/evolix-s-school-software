@@ -23,11 +23,12 @@ interface TenantContextType {
   currentTenant: TenantInfo | null;
   availableTenants: AvailableTenant[];
   isLoadingTenant: boolean;
-  switchTenant: (tenantSlug: string) => Promise<void>;
+  switchTenant: (tenantSlug: string, schoolId?: string) => Promise<void>;
+  switchSchool: (schoolId: string, schoolName?: string) => void;
   hasEntitlement: (code: string) => boolean;
 }
 
-const TenantContext = createContext<TenantContextType | undefined>(undefined);
+export const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -104,8 +105,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const switchTenant = async (tenantSlug: string, schoolId?: string) => {
     setIsLoadingTenant(true);
     try {
-      const selected = availableTenants.find(
-        (t) => (schoolId ? t.schoolId === schoolId : t.tenantSlug === tenantSlug)
+      const selected = availableTenants.find((t) =>
+        schoolId ? t.schoolId === schoolId : t.tenantSlug === tenantSlug
       );
       if (selected) {
         if (selected.schoolId) {
@@ -117,6 +118,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setIsLoadingTenant(false);
     }
+  };
+
+  const switchSchool = (newSchoolId: string, _schoolName?: string) => {
+    localStorage.setItem('selected_school_id', newSchoolId);
+    window.location.reload();
   };
 
   const hasEntitlement = (code: string): boolean => {
@@ -132,12 +138,17 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         availableTenants,
         isLoadingTenant,
         switchTenant,
+        switchSchool,
         hasEntitlement,
       }}
     >
       {children}
     </TenantContext.Provider>
   );
+};
+
+export const useOptionalTenant = () => {
+  return useContext(TenantContext);
 };
 
 export const useTenant = () => {

@@ -10,9 +10,9 @@ import {
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import apiClient from '../../../lib/api-client';
 import { useTenant } from '../../../core/tenancy/TenantContext';
 import {
-  getBrandingAssetUrl,
   useBranding,
   useDeleteBrandingAsset,
   useUpdateConfiguration,
@@ -32,6 +32,9 @@ export default function BrandingConfiguration() {
   const update = useUpdateConfiguration('branding', schoolId);
   const [values, setValues] = useState<Record<string, string | number | boolean | null>>({});
   const [preview, setPreview] = useState<string>();
+  const [remotePreview, setRemotePreview] = useState<string>();
+  const [loadingAsset, setLoadingAsset] = useState(false);
+  const [assetLoadFailed, setAssetLoadFailed] = useState(false);
   const [fileError, setFileError] = useState('');
   const [assetType, setAssetType] = useState<'logo' | 'compact_logo' | 'favicon'>('logo');
 
@@ -45,12 +48,72 @@ export default function BrandingConfiguration() {
     };
   }, [preview]);
 
+  useEffect(() => {
+    return () => {
+      if (remotePreview) URL.revokeObjectURL(remotePreview);
+    };
+  }, [remotePreview]);
+
   const hasAsset =
     assetType === 'logo'
       ? Boolean(values.logo_file_id || values.logo_storage_key)
       : assetType === 'compact_logo'
         ? Boolean(values.compact_logo_file_id)
         : Boolean(values.favicon_file_id);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+
+    if (hasAsset && schoolId && !preview) {
+      setLoadingAsset(true);
+      setAssetLoadFailed(false);
+      apiClient
+        .get(`/configuration/branding/asset/${assetType}`, {
+          params: {
+            school_id: schoolId,
+            t: values.logo_file_id || branding.data?.version || Date.now(),
+          },
+          responseType: 'blob',
+        })
+        .then((res) => {
+          if (active && res.data) {
+            objectUrl = URL.createObjectURL(res.data);
+            setRemotePreview(objectUrl);
+            setAssetLoadFailed(false);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setRemotePreview(undefined);
+            setAssetLoadFailed(true);
+          }
+        })
+        .finally(() => {
+          if (active) setLoadingAsset(false);
+        });
+    } else if (!hasAsset) {
+      setRemotePreview(undefined);
+      setAssetLoadFailed(false);
+    }
+
+    return () => {
+      active = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [
+    hasAsset,
+    schoolId,
+    assetType,
+    values.logo_file_id,
+    values.logo_storage_key,
+    values.compact_logo_file_id,
+    values.favicon_file_id,
+    branding.data?.version,
+    preview,
+  ]);
 
   const chooseFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -68,6 +131,7 @@ export default function BrandingConfiguration() {
     }
     const localUrl = URL.createObjectURL(file);
     setPreview(localUrl);
+    setRemotePreview(undefined);
     try {
       const data = await upload.mutateAsync({ file, assetType });
       setValues(data.values);
@@ -86,6 +150,7 @@ export default function BrandingConfiguration() {
       const data = await deleteAsset.mutateAsync(assetType);
       setValues(data.values);
       setPreview(undefined);
+      setRemotePreview(undefined);
     } catch (err: any) {
       const msg = err.response?.data?.error?.message || err.response?.data?.detail;
       setFileError(msg || t('admin.configuration.branding.uploadError'));
@@ -98,11 +163,7 @@ export default function BrandingConfiguration() {
     await update.mutateAsync({ version: currentVersion, values });
   };
 
-  const imageSource =
-    preview ||
-    (hasAsset && schoolId
-      ? getBrandingAssetUrl(assetType, schoolId, Number(values.version || branding.data?.version || 1))
-      : undefined);
+  const imageSource = preview || remotePreview;
 
   if (!schoolId || branding.isLoading) {
     return (
@@ -126,14 +187,15 @@ export default function BrandingConfiguration() {
       <div className="glass-panel p-5 md:p-7 bg-white/70 border border-zinc-200 space-y-6">
         <div className="flex flex-col sm:flex-row gap-5 items-start">
           <div className="w-32 h-32 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 flex items-center justify-center overflow-hidden shrink-0">
-            {imageSource ? (
+            {loadingAsset ? (
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+            ) : imageSource && !assetLoadFailed ? (
               <img
                 src={imageSource}
                 alt={t('admin.configuration.branding.logoPreview')}
                 className="max-w-full max-h-full object-contain p-1"
                 onError={() => {
-                  // Fallback if asset file cannot be loaded
-                  if (!preview) setPreview(undefined);
+                  setAssetLoadFailed(true);
                 }}
               />
             ) : (

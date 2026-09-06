@@ -3,7 +3,10 @@ import { useForm } from 'react-hook-form';
 import { Plus, Trash2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import apiClient from '../../../../lib/api-client';
 
+import { useToast } from '../../../../components/ui/Toast';
+
 export default function IpRestrictionsList() {
+  const { toast, confirm } = useToast();
   const [rules, setRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -43,12 +46,19 @@ export default function IpRestrictionsList() {
   };
 
   const deleteRule = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this rule?')) return;
+    const ok = await confirm({
+      title: 'Delete IP Restriction Rule',
+      message: 'Are you sure you want to delete this rule?',
+      confirmText: 'Delete Rule',
+      isDestructive: true,
+    });
+    if (!ok) return;
     try {
       await apiClient.delete(`/security/ip-restrictions/${id}`);
+      toast.success('IP restriction rule deleted.');
       loadRules();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toast.error(e.response?.data?.error?.message || e.message || 'Failed to delete rule.');
     }
   };
 

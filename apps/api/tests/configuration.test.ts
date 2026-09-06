@@ -94,4 +94,21 @@ describe('Configuration & Optimistic Concurrency', () => {
     expect(successRes.status).toBe(200);
     expect(successRes.body.values.logo_file_id).toBeDefined();
   });
+
+  it('should filter configuration history by action and date range', async () => {
+    const res = await request(app)
+      .get('/api/v1/configuration/history')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .query({
+        date_from: '2000-01-01T00:00:00.000Z',
+        date_to: '2099-12-31T23:59:59.999Z',
+      });
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body[0].action).toBeDefined();
+    expect(res.body[0].entity_type).toBeDefined();
+  });
 });
+

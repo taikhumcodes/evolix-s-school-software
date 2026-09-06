@@ -95,6 +95,7 @@ export class AuthController {
         permissions: Array.from(user.permissions),
         isSuperadmin: user.isSuperadmin,
         is_2fa_enabled: Boolean(twoFactor?.isActive),
+        must_change_password: user.mustChangePassword,
       });
     } catch (err) {
       next(err);

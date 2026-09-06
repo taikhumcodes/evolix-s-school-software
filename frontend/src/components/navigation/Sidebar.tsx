@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../core/auth/AuthContext';
 import { useTenant } from '../../core/tenancy/TenantContext';
 import {
@@ -17,47 +18,90 @@ import {
   ServerCog,
   Sparkles,
   Settings,
+  Layers,
+  HeartHandshake,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { user, hasPermission } = useAuth();
   const { hasEntitlement } = useTenant();
+  const { t } = useTranslation();
 
   const businessNav = [
-    { name: 'Configuration', path: '/configuration', icon: Settings, entitlement: null, permission: 'settings.manage' },
     {
-      name: 'Students & Admissions',
+      name: t('navigation.configuration', 'Configuration'),
+      path: '/configuration',
+      icon: Settings,
+      entitlement: null,
+      permission: 'settings.manage',
+    },
+    {
+      name: t('navigation.masterData', 'Master Data'),
+      path: '/master-data',
+      icon: Layers,
+      entitlement: null,
+      permission: 'master_data.view',
+    },
+    {
+      name: t('navigation.students', 'Students & Admissions'),
       path: '/students',
       icon: Users,
       entitlement: 'students.enabled',
       badge: 'Core',
     },
     {
-      name: 'Attendance & Geofence',
+      name: t('navigation.parents', 'Parents & Families'),
+      path: '/guardians/overview',
+      icon: HeartHandshake,
+      entitlement: null,
+      permission: 'guardians.view',
+      badge: 'M04',
+    },
+    {
+      name: t('navigation.attendance', 'Attendance & Geofence'),
       path: '/attendance',
       icon: CalendarCheck,
-      entitlement: 'attendance.enabled',
+      entitlement: null,
+      permission: 'attendance.view',
+      badge: 'M05',
     },
     {
-      name: 'Finance & Fees',
+      name: t('navigation.finance', 'Finance & Accounting'),
       path: '/finance',
       icon: CreditCard,
-      entitlement: 'finance.enabled',
-      badge: 'M03',
+      entitlement: null,
+      permission: 'finance.view',
+      badge: 'M07',
     },
     {
-      name: 'Academics & Classes',
+      name: t('navigation.academics', 'Academics & Timetable'),
       path: '/academics',
       icon: BookOpen,
-      entitlement: 'academics.enabled',
+      entitlement: null,
+      permission: 'academic.view',
+      badge: 'M06',
     },
-    { name: 'Examinations', path: '/exams', icon: Award, entitlement: 'exams.enabled' },
-    { name: 'HR & Payroll', path: '/hr', icon: Briefcase, entitlement: 'payroll.enabled' },
-    { name: 'Transport Fleet', path: '/transport', icon: Bus, entitlement: 'transport.enabled' },
-    { name: 'Certificates & TC', path: '/lifecycle', icon: FileBadge, entitlement: null },
-    { name: 'Communication', path: '/communication', icon: MessageSquare, entitlement: null },
     {
-      name: 'Inventory & Assets',
+      name: t('navigation.exams', 'Examinations & Marks'),
+      path: '/academics/exams',
+      icon: Award,
+      entitlement: null,
+      permission: 'exams.view',
+      badge: 'M06',
+    },
+    {
+      name: t('navigation.hr', 'HR & Payroll'),
+      path: '/hr',
+      icon: Briefcase,
+      entitlement: null,
+      permission: 'hr.employee.view',
+      badge: 'M08',
+    },
+    { name: t('navigation.transport', 'Transport Fleet'), path: '/transport', icon: Bus, entitlement: 'transport.enabled' },
+    { name: t('navigation.certificates', 'Certificates & TC'), path: '/lifecycle', icon: FileBadge, entitlement: null },
+    { name: t('navigation.communication', 'Communication'), path: '/communication', icon: MessageSquare, entitlement: null },
+    {
+      name: t('navigation.inventory', 'Inventory & Assets'),
       path: '/inventory',
       icon: Package,
       entitlement: 'inventory.enabled',
@@ -87,48 +131,74 @@ export const Sidebar: React.FC = () => {
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1.5">
         <div className="px-3 pb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-          <span>School Modules</span>
+          <span>{t('navigation.schoolModules', 'School Modules')}</span>
           <span className="text-[10px] text-zinc-400">M01–M11</span>
         </div>
 
         {businessNav
           .filter((item: any) => !item.permission || hasPermission(item.permission))
           .map((item) => {
-          const isEnabled = item.entitlement ? hasEntitlement(item.entitlement) : true;
-          const Icon = item.icon;
+            const isEnabled = item.entitlement ? hasEntitlement(item.entitlement) : true;
+            const Icon = item.icon;
 
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-mehndi-100 to-white text-mehndi-700 border border-mehndi-200 shadow-sm shadow-mehndi-500/10 font-semibold'
-                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50/80'
-                } ${!isEnabled ? 'opacity-40 hover:opacity-75' : ''}`
-              }
-            >
-              <div className="flex items-center gap-3 truncate">
-                <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
-                <span className="truncate">{item.name}</span>
-              </div>
-              {item.badge && (
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-zinc-100 text-zinc-500 border border-zinc-200">
-                  {item.badge}
-                </span>
-              )}
-            </NavLink>
-          );
-        })}
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-mehndi-100 to-white text-mehndi-700 border border-mehndi-200 shadow-sm shadow-mehndi-500/10 font-semibold'
+                      : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50/80'
+                  } ${!isEnabled ? 'opacity-40 hover:opacity-75' : ''}`
+                }
+              >
+                <div className="flex items-center gap-3 truncate">
+                  <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
+                  <span className="truncate">{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-zinc-100 text-zinc-500 border border-zinc-200">
+                    {item.badge}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
         {/* Administration section */}
         {(() => {
           const adminNav = [
-            { name: 'Users', path: '/admin/users', icon: Users, permission: 'users.manage' },
-            { name: 'Roles & Permissions', path: '/admin/roles', icon: ShieldCheck, permission: 'roles.manage' },
-            { name: 'Security & Access', path: '/admin/security/overview', icon: ServerCog, permission: 'security.manage' },
-            { name: 'Academic Years', path: '/admin/academic-years', icon: Award, permission: 'academic.manage' },
-            { name: 'Audit Logs', path: '/admin/audit-logs', icon: BookOpen, permission: 'users.manage' },
+            { name: t('navigation.users', 'Users'), path: '/admin/users', icon: Users, permission: 'users.manage' },
+            {
+              name: t('navigation.roles', 'Roles & Permissions'),
+              path: '/admin/roles',
+              icon: ShieldCheck,
+              permission: 'roles.manage',
+            },
+            {
+              name: t('navigation.security', 'Security & Access'),
+              path: '/admin/security/overview',
+              icon: ServerCog,
+              permission: 'security.manage',
+            },
+            {
+              name: t('navigation.academicYears', 'Academic Years'),
+              path: '/admin/academic-years',
+              icon: Award,
+              permission: 'academic.manage',
+            },
+            {
+              name: t('navigation.setupWizard', 'Setup Wizard'),
+              path: '/admin/setup-wizard',
+              icon: Sparkles,
+              permission: 'settings.manage',
+            },
+            {
+              name: t('navigation.auditLogs', 'Audit Logs'),
+              path: '/admin/audit-logs',
+              icon: BookOpen,
+              permission: 'users.manage',
+            },
           ].filter((item) => hasPermission(item.permission));
 
           if (adminNav.length === 0) return null;
@@ -138,7 +208,7 @@ export const Sidebar: React.FC = () => {
               <div className="px-3 pb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  Administration
+                  {t('navigation.administration', 'Administration')}
                 </span>
               </div>
               {adminNav.map((item) => {
@@ -169,7 +239,7 @@ export const Sidebar: React.FC = () => {
             <div className="px-3 pb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-mehndi-600">
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
-                Control Plane
+                {t('navigation.controlPlane', 'Control Plane')}
               </span>
               <span className="text-[10px] text-mehndi-500/80">Admin</span>
             </div>
@@ -212,8 +282,8 @@ export const Sidebar: React.FC = () => {
               window.location.href = '/login';
             }}
             className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
-            title="Logout"
-            aria-label="Logout"
+            title={t('navigation.logout', 'Logout')}
+            aria-label={t('navigation.logout', 'Logout')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -178,3 +178,41 @@ export function formatRecoveryCode(code: string): string {
   }
   return norm;
 }
+
+// ============================================================
+// Secure Temporary Password Generation
+// ============================================================
+export function generateTemporaryPassword(length: number = 16): string {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // exclude ambiguous I, O
+  const lower = 'abcdefghijkmnopqrstuvwxyz'; // exclude ambiguous l
+  const numbers = '23456789'; // exclude 0, 1
+  const special = '!@#$%^&*()_+-=';
+  const all = upper + lower + numbers + special;
+
+  // Guarantee at least 2 of each character class for guaranteed policy compliance
+  const chars: string[] = [
+    upper[crypto.randomInt(0, upper.length)],
+    upper[crypto.randomInt(0, upper.length)],
+    lower[crypto.randomInt(0, lower.length)],
+    lower[crypto.randomInt(0, lower.length)],
+    numbers[crypto.randomInt(0, numbers.length)],
+    numbers[crypto.randomInt(0, numbers.length)],
+    special[crypto.randomInt(0, special.length)],
+    special[crypto.randomInt(0, special.length)],
+  ];
+
+  for (let i = chars.length; i < length; i++) {
+    chars.push(all[crypto.randomInt(0, all.length)]);
+  }
+
+  // Fisher-Yates cryptographically secure shuffle
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    const temp = chars[i];
+    chars[i] = chars[j];
+    chars[j] = temp;
+  }
+
+  return chars.join('');
+}
+

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { verifyJwtToken, AccessTokenPayload } from '../lib/crypto.js';
-import { UnauthorizedError } from '../lib/errors.js';
+import { UnauthorizedError, ForbiddenError } from '../lib/errors.js';
 
 export interface AuthenticatedUser {
   id: string;
@@ -14,6 +14,7 @@ export interface AuthenticatedUser {
   schools: { id: string; name: string; code: string }[];
   isSuperadmin: boolean;
   selectedSchoolId?: string;
+  mustChangePassword: boolean;
 }
 
 declare global {
@@ -126,7 +127,24 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       schools,
       isSuperadmin,
       selectedSchoolId,
+      mustChangePassword: user.mustChangePassword,
     };
+
+    if (user.mustChangePassword) {
+      const url = req.originalUrl || req.url;
+      const isAllowed =
+        url.includes('/auth/me') ||
+        url.includes('/auth/logout') ||
+        url.includes('/security/password') ||
+        url.includes('/security/policy');
+      if (!isAllowed) {
+        return next(
+          new ForbiddenError('Password change required before accessing application', {
+            code: 'PASSWORD_CHANGE_REQUIRED',
+          })
+        );
+      }
+    }
 
     next();
   } catch (err) {
