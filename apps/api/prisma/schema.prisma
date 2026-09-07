@@ -153,6 +153,9 @@ model Tenant {
   documentSignatureAssets      DocumentSignatureAsset[]
   generatedDocuments           GeneratedDocument[]
   bulkDocumentJobs             BulkDocumentJob[]
+  savedReports                 SavedReport[]
+  dataExports                  DataExport[]
+  backupRecords                BackupRecord[]
 
   @@map("tenants")
 }
@@ -295,6 +298,8 @@ model School {
   documentSignatureAssets      DocumentSignatureAsset[]
   generatedDocuments           GeneratedDocument[]
   bulkDocumentJobs             BulkDocumentJob[]
+  savedReports                 SavedReport[]
+  dataExports                  DataExport[]
 
   @@map("schools")
 }
@@ -5277,4 +5282,100 @@ model BulkDocumentJobItem {
   @@map("bulk_document_job_items")
 }
 
+enum ReportVisibility {
+  PRIVATE
+  SCHOOL_SHARED
+}
 
+enum ExportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+enum BackupStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  NOT_CONFIGURED
+}
+
+enum BackupType {
+  FULL
+  SCHEMA_ONLY
+  DATA_ONLY
+}
+
+model SavedReport {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @map("tenant_id") @db.Uuid
+  schoolId        String?          @map("school_id") @db.Uuid
+  name            String
+  description     String?          @db.Text
+  dataset         String           @db.VarChar(100)
+  dimensionsJson  Json             @map("dimensions_json")
+  metricsJson     Json             @map("metrics_json")
+  filtersJson     Json             @map("filters_json")
+  sortJson        Json             @map("sort_json")
+  visualization   String           @default("TABLE") @db.VarChar(50)
+  visibility      ReportVisibility @default(PRIVATE)
+  status          String           @default("ACTIVE") @db.VarChar(50) // ACTIVE, ARCHIVED
+  createdBy       String?          @map("created_by") @db.Uuid
+  updatedBy       String?          @map("updated_by") @db.Uuid
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school          School?          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, dataset])
+  @@map("saved_reports")
+}
+
+model DataExport {
+  id                      String       @id @default(uuid()) @db.Uuid
+  tenantId                String       @map("tenant_id") @db.Uuid
+  schoolId                String?      @map("school_id") @db.Uuid
+  exportVersion           String       @map("export_version") @db.VarChar(50)
+  appVersion              String       @map("app_version") @db.VarChar(50)
+  status                  ExportStatus @default(PENDING)
+  privateStorageReference String?      @map("private_storage_reference") @db.Text
+  checksum                String?      @db.VarChar(255)
+  sizeBytes               BigInt?      @map("size_bytes")
+  includedDatasets        Json         @map("included_datasets")
+  createdBy               String?      @map("created_by") @db.Uuid
+  startedAt               DateTime?    @map("started_at")
+  completedAt             DateTime?    @map("completed_at")
+  expiresAt               DateTime?    @map("expires_at")
+  createdAt               DateTime     @default(now()) @map("created_at")
+  updatedAt               DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  tenant                  Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school                  School?      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, status])
+  @@map("data_exports")
+}
+
+model BackupRecord {
+  id                      String       @id @default(uuid()) @db.Uuid
+  tenantId                String?      @map("tenant_id") @db.Uuid
+  type                    BackupType   @default(FULL)
+  status                  BackupStatus @default(PENDING)
+  privateStorageReference String?      @map("private_storage_reference") @db.Text
+  checksum                String?      @db.VarChar(255)
+  sizeBytes               BigInt?      @map("size_bytes")
+  createdBy               String?      @map("created_by") @db.Uuid
+  startedAt               DateTime?    @map("started_at")
+  completedAt             DateTime?    @map("completed_at")
+  createdAt               DateTime     @default(now()) @map("created_at")
+  updatedAt               DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  tenant                  Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@map("backup_records")
+}

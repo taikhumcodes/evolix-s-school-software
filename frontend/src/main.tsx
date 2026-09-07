@@ -9,7 +9,7 @@ import './styles/index.css';
 import AppRoutes from './routes';
 import './i18n';
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,

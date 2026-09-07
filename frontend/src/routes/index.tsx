@@ -134,6 +134,11 @@ const SignaturesBrandingView = lazy(() => import('../app/views/documents/Signatu
 const DocumentReportsView = lazy(() => import('../app/views/documents/DocumentReportsView'));
 const PublicDocumentVerification = lazy(() => import('../app/views/documents/PublicDocumentVerification'));
 
+// Module 12: Analytics, Reports & Platform
+const AnalyticsDashboard = lazy(() => import('../app/views/analytics/AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
+const ReportBuilder = lazy(() => import('../app/views/reports/ReportBuilder').then((m) => ({ default: m.ReportBuilder })));
+const SystemHealth = lazy(() => import('../app/views/platform/SystemHealth').then((m) => ({ default: m.SystemHealth })));
+
 export default function AppRoutes() {
   return (
     <Suspense
@@ -341,6 +346,25 @@ export default function AppRoutes() {
               <Route path="configuration/number-series" element={<NumberSeriesConfiguration />} />
               <Route path="configuration/history" element={<ConfigurationHistory />} />
               <Route path="configuration/:section" element={<Configuration />} />
+            </Route>
+
+            {/* Module 12: Analytics, Reports & Platform */}
+            <Route path="analytics">
+              <Route element={<PermissionRoute permission="analytics.view" />}>
+                <Route index element={<AnalyticsDashboard />} />
+              </Route>
+            </Route>
+
+            <Route path="reports">
+              <Route element={<PermissionRoute permission="reports.view" />}>
+                <Route index element={<ReportBuilder />} />
+              </Route>
+            </Route>
+
+            <Route path="platform">
+              <Route element={<PermissionRoute permission="platform.view" />}>
+                <Route index element={<SystemHealth />} />
+              </Route>
             </Route>
 
             {/* Admin area */}

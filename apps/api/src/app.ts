@@ -47,6 +47,9 @@ import { operationsRouter } from './modules/operations/operations.routes.js';
 import { communicationRouter, automationRouter } from './modules/communication/communication.routes.js';
 import { documentsRouter } from './modules/documents/documents.routes.js';
 import { PublicVerifyController } from './modules/documents/public-verify.controller.js';
+import { analyticsRouter } from './modules/analytics/analytics.routes.js';
+import { reportsRouter } from './modules/reports/reports.routes.js';
+import { platformRouter } from './modules/platform/platform.routes.js';
 
 export const app = express();
 
@@ -128,6 +131,9 @@ app.use('/api/v1/communication', communicationRouter);
 app.use('/api/v1/automation', automationRouter);
 app.use('/api/public/documents/verify/:token', PublicVerifyController.verify);
 app.use('/api/v1/documents', documentsRouter);
+app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/reports', reportsRouter);
+app.use('/api/v1/platform', platformRouter);
 
 // 404 handler for unknown routes
 app.use((req, res, next) => {
