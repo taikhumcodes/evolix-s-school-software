@@ -154,6 +154,18 @@ async function main() {
     { code: 'automation.manage', description: 'Create, edit, and configure automation workflows and conditions' },
     { code: 'automation.execute', description: 'Manually trigger automation jobs or test events' },
     { code: 'automation.tasks.manage', description: 'Assign, update, and complete automated internal tasks' },
+    // Module 11: Documents, Certificates & Printing Permissions
+    { code: 'documents.templates.view', description: 'View document templates and layouts' },
+    { code: 'documents.templates.manage', description: 'Create, edit, configure, and archive document templates' },
+    { code: 'documents.generate', description: 'Generate preview and official documents/certificates' },
+    { code: 'documents.finalize', description: 'Finalize draft documents and allocate official number' },
+    { code: 'documents.reprint', description: 'Reprint/re-download existing finalized documents' },
+    { code: 'documents.cancel', description: 'Cancel/revoke previously finalized documents' },
+    { code: 'documents.bulk.manage', description: 'Create, execute, and monitor bulk document generation jobs' },
+    { code: 'documents.branding.manage', description: 'Manage authorized signatures, stamps, and school seals' },
+    { code: 'documents.verify.view', description: 'View document audit log, verification history, and checksums' },
+    { code: 'documents.export', description: 'Export document logs and registers to CSV' },
+    { code: 'documents.salary_cert.generate', description: 'Generate employee salary certificates' },
   ];
 
   const permissions = [];
@@ -342,6 +354,13 @@ async function main() {
     { code: 'JOURNAL', prefix: 'JRN-{YYYY}-', padding: 6 },
     { code: 'VENDOR_PAYMENT', prefix: 'VPAY-{YYYY}-', padding: 5 },
     { code: 'BANK_TRANSFER', prefix: 'BT-{YYYY}-', padding: 5 },
+    { code: 'DOC_BONAFIDE', prefix: 'BON-{YYYY}-', padding: 5 },
+    { code: 'DOC_TRANSFER', prefix: 'TC-{YYYY}-', padding: 5 },
+    { code: 'DOC_CHARACTER', prefix: 'CC-{YYYY}-', padding: 5 },
+    { code: 'DOC_STUDENT_ID', prefix: 'ID-{YYYY}-', padding: 6 },
+    { code: 'DOC_STAFF_ID', prefix: 'SID-{YYYY}-', padding: 6 },
+    { code: 'DOC_SALARY_CERT', prefix: 'SC-{YYYY}-', padding: 5 },
+    { code: 'DOC_EXPERIENCE_CERT', prefix: 'EC-{YYYY}-', padding: 5 },
   ];
   for (const s of seriesDefinitions) {
     const existing = await prisma.numberSeries.findFirst({
@@ -915,6 +934,254 @@ async function main() {
           isActive: r.isActive,
           version: 1,
           createdBy: adminUser.id,
+        },
+      });
+    }
+  }
+
+  // 12. Default Document Templates (Module 11)
+  const defaultTemplates = [
+    {
+      code: 'BONAFIDE_CERTIFICATE_STD',
+      name: 'Standard Bonafide Certificate',
+      documentType: 'BONAFIDE_CERTIFICATE' as const,
+      category: 'STUDENT' as const,
+      numberingPolicy: 'NUMBER_SERIES_ON_FINALIZE' as const,
+      numberSeriesCode: 'DOC_BONAFIDE',
+      pageSize: 'A4',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 20, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'header_subtitle', type: 'TEXT', content: 'Affiliated to {{school.board}} | Code: {{school.code}}', style: { fontSize: 10, alignment: 'center', color: '#64748b' } },
+          { id: 'divider', type: 'LINE', style: { color: '#cbd5e1', lineWidth: 1 } },
+          { id: 'doc_title', type: 'TEXT', content: 'BONAFIDE CERTIFICATE', style: { fontSize: 16, bold: true, alignment: 'center', marginTop: 15, color: '#0f172a' } },
+          { id: 'hindi_title', type: 'TEXT', content: 'विद्यालय प्रमाण पत्र', style: { fontSize: 12, alignment: 'center', color: '#475569' } },
+          { id: 'ref_row', type: 'ROW', style: { marginTop: 15 }, children: [
+            { id: 'ref_no', type: 'TEXT', content: 'Ref No: {{document.number}}', style: { bold: true } },
+            { id: 'issue_date', type: 'TEXT', content: 'Date of Issue: {{document.dateFormatted}}', style: { alignment: 'right' } }
+          ]},
+          { id: 'cert_body', type: 'PARAGRAPH', style: { marginTop: 25, lineHeight: 1.6, fontSize: 12 }, content: 'This is to certify that {{student.fullName}} (Admission No: {{student.admissionNumber}}) son/daughter of {{student.fatherName}} and {{student.motherName}}, is a bonafide student of this institution studying in Class {{academic.className}} - Section {{academic.sectionName}} during the academic session {{academic.academicYear}}.' },
+          { id: 'dob_body', type: 'PARAGRAPH', style: { marginTop: 10, lineHeight: 1.6, fontSize: 12 }, content: "According to the school records, the student's date of birth is {{student.dateOfBirthFormatted}}." },
+          { id: 'conduct_body', type: 'PARAGRAPH', style: { marginTop: 10, lineHeight: 1.6, fontSize: 12 }, content: 'To the best of our knowledge, the student bears a good moral character and conduct.' },
+          { id: 'sig_row', type: 'ROW', style: { marginTop: 60 }, children: [
+            { id: 'seal', type: 'TEXT', content: 'School Seal', style: { fontSize: 10, color: '#94a3b8' } },
+            { id: 'prin_sig', type: 'TEXT', content: 'Principal / Headmaster\nAuthorized Signatory', style: { alignment: 'right', bold: true } }
+          ]},
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 70, height: 70, marginTop: 30, alignment: 'left' } }
+        ]
+      },
+    },
+    {
+      code: 'TRANSFER_CERTIFICATE_STD',
+      name: 'Standard Transfer Certificate (TC)',
+      documentType: 'TRANSFER_CERTIFICATE' as const,
+      category: 'STUDENT' as const,
+      numberingPolicy: 'NUMBER_SERIES_ON_FINALIZE' as const,
+      numberSeriesCode: 'DOC_TRANSFER',
+      pageSize: 'A4',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 20, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'doc_title', type: 'TEXT', content: 'TRANSFER CERTIFICATE', style: { fontSize: 16, bold: true, alignment: 'center', marginTop: 15 } },
+          { id: 'ref_row', type: 'ROW', style: { marginTop: 15 }, children: [
+            { id: 'ref_no', type: 'TEXT', content: 'TC No: {{document.number}}', style: { bold: true } },
+            { id: 'issue_date', type: 'TEXT', content: 'Date: {{document.dateFormatted}}', style: { alignment: 'right' } }
+          ]},
+          { id: 'tc_body', type: 'PARAGRAPH', style: { marginTop: 25, lineHeight: 1.6, fontSize: 12 }, content: 'This is to certify that {{student.fullName}}, Admission No: {{student.admissionNumber}}, has withdrawn from {{school.name}}.' },
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 70, height: 70, marginTop: 40, alignment: 'left' } }
+        ]
+      },
+    },
+    {
+      code: 'CHARACTER_CERTIFICATE_STD',
+      name: 'Standard Character Certificate',
+      documentType: 'CHARACTER_CERTIFICATE' as const,
+      category: 'STUDENT' as const,
+      numberingPolicy: 'NUMBER_SERIES_ON_FINALIZE' as const,
+      numberSeriesCode: 'DOC_CHARACTER',
+      pageSize: 'A4',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 20, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'doc_title', type: 'TEXT', content: 'CHARACTER CERTIFICATE', style: { fontSize: 16, bold: true, alignment: 'center', marginTop: 15 } },
+          { id: 'cert_body', type: 'PARAGRAPH', style: { marginTop: 25, lineHeight: 1.6, fontSize: 12 }, content: 'This is to certify that {{student.fullName}} has been a student of good moral character.' },
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 70, height: 70, marginTop: 40, alignment: 'left' } }
+        ]
+      },
+    },
+    {
+      code: 'STUDENT_ID_CARD_STD',
+      name: 'Standard Student Identity Card',
+      documentType: 'STUDENT_ID_CARD' as const,
+      category: 'STUDENT' as const,
+      numberingPolicy: 'NUMBER_SERIES_ON_FINALIZE' as const,
+      numberSeriesCode: 'DOC_STUDENT_ID',
+      pageSize: 'CARD_CR80',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 10, bottom: 10, left: 10, right: 10 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.shortName}}', style: { fontSize: 12, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'student_photo', type: 'IMAGE', source: '{{student.photoUrl}}', style: { width: 60, height: 70, alignment: 'center', marginTop: 5 } },
+          { id: 'student_name', type: 'TEXT', content: '{{student.fullName}}', style: { fontSize: 11, bold: true, alignment: 'center', marginTop: 5 } },
+          { id: 'student_class', type: 'TEXT', content: 'Class: {{academic.className}} - {{academic.sectionName}}', style: { fontSize: 9, alignment: 'center' } },
+          { id: 'student_adm', type: 'TEXT', content: 'Adm: {{student.admissionNumber}}', style: { fontSize: 9, alignment: 'center' } },
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 40, height: 40, alignment: 'center', marginTop: 5 } }
+        ]
+      },
+    },
+    {
+      code: 'FEE_RECEIPT_STD',
+      name: 'Standard Fee Payment Receipt',
+      documentType: 'FEE_RECEIPT' as const,
+      category: 'FINANCE' as const,
+      numberingPolicy: 'SOURCE_NUMBER' as const,
+      pageSize: 'A4',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 30, bottom: 30, left: 30, right: 30 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 18, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'doc_title', type: 'TEXT', content: 'FEE PAYMENT RECEIPT', style: { fontSize: 14, bold: true, alignment: 'center', marginTop: 10 } },
+          { id: 'ref_row', type: 'ROW', style: { marginTop: 15 }, children: [
+            { id: 'rcpt_no', type: 'TEXT', content: 'Receipt No: {{finance.receiptNumber}}', style: { bold: true } },
+            { id: 'rcpt_date', type: 'TEXT', content: 'Date: {{finance.paymentDateFormatted}}', style: { alignment: 'right' } }
+          ]},
+          { id: 'student_info', type: 'TEXT', content: 'Student: {{student.fullName}} ({{student.admissionNumber}}) | Class: {{academic.className}}', style: { marginTop: 10 } },
+          { id: 'items_table', type: 'TABLE', source: 'finance.items', columns: [
+            { header: 'Fee Item', key: 'name', width: 250 },
+            { header: 'Amount', key: 'amountFormatted', width: 100, align: 'right' },
+            { header: 'Paid', key: 'paidAmountFormatted', width: 100, align: 'right' }
+          ], style: { marginTop: 15 } },
+          { id: 'total_row', type: 'TEXT', content: 'Total Paid: {{finance.totalAmountFormatted}}', style: { fontSize: 12, bold: true, alignment: 'right', marginTop: 10 } },
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 60, height: 60, marginTop: 20, alignment: 'left' } }
+        ]
+      },
+    },
+    {
+      code: 'EMPLOYEE_PAYSLIP_STD',
+      name: 'Standard Employee Payslip',
+      documentType: 'PAYSLIP' as const,
+      category: 'PAYROLL' as const,
+      numberingPolicy: 'SOURCE_NUMBER' as const,
+      pageSize: 'A4',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 30, bottom: 30, left: 30, right: 30 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 18, bold: true, alignment: 'center' } },
+          { id: 'doc_title', type: 'TEXT', content: 'SALARY PAYSLIP - {{payroll.period}}', style: { fontSize: 14, bold: true, alignment: 'center', marginTop: 10 } },
+          { id: 'emp_details', type: 'TEXT', content: 'Employee: {{employee.fullName}} ({{employee.code}}) | Designation: {{employee.designation}}', style: { marginTop: 15 } },
+          { id: 'earnings_table', type: 'TABLE', source: 'payroll.earnings', columns: [
+            { header: 'Earnings', key: 'name', width: 200 },
+            { header: 'Amount', key: 'amountFormatted', width: 100, align: 'right' }
+          ], style: { marginTop: 10 } },
+          { id: 'net_pay', type: 'TEXT', content: 'Net Pay: {{payroll.netPayFormatted}}', style: { fontSize: 13, bold: true, alignment: 'right', marginTop: 15 } },
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 50, height: 50, marginTop: 20 } }
+        ]
+      },
+    },
+    {
+      code: 'SALARY_CERTIFICATE_STD',
+      name: 'Standard Salary Certificate',
+      documentType: 'SALARY_CERTIFICATE' as const,
+      category: 'HR' as const,
+      numberingPolicy: 'NUMBER_SERIES_ON_FINALIZE' as const,
+      numberSeriesCode: 'DOC_SALARY_CERT',
+      pageSize: 'A4',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 18, bold: true, alignment: 'center' } },
+          { id: 'doc_title', type: 'TEXT', content: 'SALARY CERTIFICATE', style: { fontSize: 14, bold: true, alignment: 'center', marginTop: 15 } },
+          { id: 'ref_row', type: 'ROW', style: { marginTop: 15 }, children: [
+            { id: 'ref_no', type: 'TEXT', content: 'Ref No: {{document.number}}', style: { bold: true } },
+            { id: 'issue_date', type: 'TEXT', content: 'Date: {{document.dateFormatted}}', style: { alignment: 'right' } }
+          ]},
+          { id: 'body', type: 'PARAGRAPH', style: { marginTop: 20, lineHeight: 1.6 }, content: 'This is to certify that {{employee.fullName}} (Emp Code: {{employee.code}}) is working with {{school.name}} as {{employee.designation}} with a monthly salary of {{payroll.monthlyGrossFormatted}}.' },
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 60, height: 60, marginTop: 30 } }
+        ]
+      },
+    },
+    {
+      code: 'TRANSPORT_ROUTE_MANIFEST_STD',
+      name: 'Transport Route Boarding Manifest',
+      documentType: 'ROUTE_MANIFEST' as const,
+      category: 'OPERATIONS' as const,
+      numberingPolicy: 'NO_OFFICIAL_NUMBER' as const,
+      pageSize: 'A4',
+      orientation: 'LANDSCAPE',
+      layoutDefinition: {
+        margins: { top: 30, bottom: 30, left: 30, right: 30 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}} - Transport Manifest', style: { fontSize: 16, bold: true } },
+          { id: 'route_info', type: 'TEXT', content: 'Route: {{transport.routeName}} ({{transport.routeCode}}) | Vehicle: {{transport.vehiclePlate}} | Driver: {{transport.driverName}}', style: { marginTop: 5 } },
+          { id: 'students_table', type: 'TABLE', source: 'transport.passengers', columns: [
+            { header: '#', key: 'seq', width: 30 },
+            { header: 'Student Name', key: 'studentName', width: 160 },
+            { header: 'Class', key: 'className', width: 80 },
+            { header: 'Stop Name', key: 'stopName', width: 160 },
+            { header: 'Guardian Phone', key: 'guardianPhone', width: 120 }
+          ], style: { marginTop: 15 } }
+        ]
+      },
+    },
+    {
+      code: 'VISITOR_PASS_STD',
+      name: 'Security Gate Visitor Pass',
+      documentType: 'VISITOR_PASS' as const,
+      category: 'OPERATIONS' as const,
+      numberingPolicy: 'SOURCE_NUMBER' as const,
+      pageSize: 'A4',
+      orientation: 'PORTRAIT',
+      layoutDefinition: {
+        margins: { top: 20, bottom: 20, left: 20, right: 20 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.shortName}} - VISITOR PASS', style: { fontSize: 16, bold: true, alignment: 'center' } },
+          { id: 'pass_no', type: 'TEXT', content: 'Pass #: {{gate.passNumber}}', style: { fontSize: 12, bold: true, alignment: 'center', marginTop: 5 } },
+          { id: 'visitor_info', type: 'TEXT', content: 'Visitor: {{gate.visitorName}} | Phone: {{gate.phone}}\nPurpose: {{gate.purpose}} | Meeting: {{gate.hostName}}\nCheck-in: {{gate.checkInFormatted}}', style: { marginTop: 10, lineHeight: 1.4 } },
+          { id: 'qr_block', type: 'QR_CODE', style: { width: 50, height: 50, marginTop: 15, alignment: 'center' } }
+        ]
+      },
+    },
+  ];
+
+  for (const t of defaultTemplates) {
+    const existing = await prisma.documentTemplate.findFirst({
+      where: { schoolId: school.id, code: t.code },
+    });
+    if (!existing) {
+      await prisma.documentTemplate.create({
+        data: {
+          tenantId: tenant.id,
+          schoolId: school.id,
+          code: t.code,
+          name: t.name,
+          documentType: t.documentType,
+          category: t.category,
+          pageSize: t.pageSize,
+          orientation: t.orientation,
+          status: 'PUBLISHED',
+          createdBy: adminUser.id,
+          versions: {
+            create: {
+              versionNumber: 1,
+              layoutDefinition: t.layoutDefinition as any,
+              pageSettings: {
+                numberingPolicy: t.numberingPolicy,
+                numberSeriesCode: (t as any).numberSeriesCode || null,
+              },
+              isPublished: true,
+              createdBy: adminUser.id,
+            },
+          },
         },
       });
     }

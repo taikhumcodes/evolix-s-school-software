@@ -43,6 +43,7 @@
     "operations": "School Operations",
     "transport": "Transport Fleet",
     "certificates": "Certificates & TC",
+    "documents": "Documents & Printing",
     "communication": "Communication",
     "inventory": "Inventory & Assets",
     "users": "Users",
@@ -1551,6 +1552,131 @@
       "createTemplate": "Create Template",
       "createRule": "Create Rule",
       "saveSettings": "Save Configuration"
+    }
+  },
+  "documents": {
+    "title": "Documents, Certificates aur Printing",
+    "subtitle": "Verified student certificates, report cards, ID cards, receipts, payslips aur QR-verifiable official records ke liye centralized document engine.",
+    "nav": {
+      "overview": "Overview",
+      "templates": "Templates",
+      "generate": "Generate",
+      "register": "Document Register",
+      "bulk": "Bulk Generation",
+      "signatures": "Signatures & Seals",
+      "reports": "Reports & Analytics"
+    },
+    "actions": {
+      "newDocument": "Certificate Issue Karein",
+      "downloadPdf": "PDF Download Karein",
+      "reprintPdf": "Reprint / Download PDF"
+    },
+    "status": {
+      "finalized": "FINALIZED",
+      "draft": "DRAFT",
+      "cancelled": "CANCELLED",
+      "superseded": "SUPERSEDED"
+    },
+    "stats": {
+      "total": "Total Documents",
+      "totalDesc": "Generated certificates aur files",
+      "finalized": "Finalized",
+      "finalizedDesc": "Official & verifiable",
+      "drafts": "Drafts",
+      "draftsDesc": "Pending finalization",
+      "reprints": "Reprints",
+      "reprintsDesc": "Idempotent byte reprints",
+      "cancelled": "Revoked / Cancelled",
+      "cancelledDesc": "Invalidated certificates"
+    },
+    "quickActions": {
+      "title": "Quick Document Actions",
+      "bonafide": "Bonafide Certificate Issue Karein",
+      "bonafideDesc": "Standard student bonafide with QR verification",
+      "bulkIdCards": "Bulk Student ID Cards",
+      "bulkIdCardsDesc": "Poori class ke liye CR80 cards batch generate karein",
+      "signatures": "Signatures & School Seals",
+      "signaturesDesc": "Authorized signatures aur seals upload karein"
+    },
+    "verify": {
+      "lookupTitle": "Public Verifier",
+      "instantVerify": "Kisi bhi issued certificate ko verify karein",
+      "lookupHelp": "Printed QR code ya bottom footer se 64-character verification token enter karein authenticity check karne ke liye.",
+      "tokenPlaceholder": "Verification token paste karein...",
+      "verifyBtn": "Authenticity Check Karein"
+    },
+    "recent": {
+      "title": "Recent Document Issuances",
+      "subtitle": "Institution bhar me latest finalized, draft, ya reprinted records",
+      "viewAll": "Complete Register Dekhein",
+      "noDocuments": "Abhi tak koi document issue nahi hua. Shuru karne ke liye 'Issue Certificate' par click karein."
+    },
+    "table": {
+      "documentNumber": "Doc # / Number",
+      "type": "Type & Category",
+      "recipient": "Recipient",
+      "status": "Status",
+      "reprints": "Reprints",
+      "date": "Issued Date",
+      "pendingFinalize": "DRAFT (No Number)"
+    },
+    "templates": {
+      "searchPlaceholder": "Code, name, type se template search karein...",
+      "newTemplate": "New Template",
+      "emptyTitle": "Koi Document Template Nahi Mila",
+      "emptyDesc": "Certificates aur official school documents design karne ke liye naya template banayein.",
+      "createFirst": "Pehla Template Banayein",
+      "editLayout": "Layout Edit Karein",
+      "issueBtn": "Issue",
+      "modalCreateTitle": "Document Template Banayein",
+      "modalCreateSubtitle": "Template type, paper format aur sequence numbering policy define karein.",
+      "formCode": "Template Unique Code",
+      "formName": "Template Display Name",
+      "formType": "Document Type",
+      "formCategory": "Category",
+      "formPageSize": "Paper Size",
+      "formOrientation": "Orientation",
+      "formPolicy": "Numbering Policy",
+      "createAndEdit": "Banayein & Layout Design Karein"
+    },
+    "category": {
+      "student": "Student",
+      "academic": "Academic",
+      "finance": "Finance",
+      "hr": "HR & Payroll",
+      "operations": "Operations"
+    },
+    "generate": {
+      "title": "Certificate ya Document Issue Karein",
+      "subtitle": "Approved layout template select karein, student ya recipient assign karein, rendered PDF preview karein, aur official verifiable record issue karein.",
+      "successFinalized": "Document Finalize & Issue Ho Gaya!",
+      "successDraft": "Document Draft Generate Ho Gaya",
+      "allocatedMsg": "Official sequence number allocate ho gaya aur immutable PDF save ho gaya.",
+      "draftMsg": "Document draft ke roop me save hai. Aap ise kabhi bhi finalize kar sakte hain.",
+      "issueAnother": "Dusra Document Issue Karein",
+      "step1": "Document Template Select Karein",
+      "step2": "Student / Recipient Select Karein",
+      "searchStudent": "Name, admission no se student search karein...",
+      "step3": "Issuance Options",
+      "autoFinalizeLabel": "Turant Auto-Finalize Karein",
+      "autoFinalizeHelp": "Official sequence number allocate karta hai aur immutable PDF save karta hai"
+    },
+    "register": {
+      "searchPlaceholder": "Document #, recipient, type search karein..."
+    },
+    "bulk": {
+      "title": "Bulk Document & Certificate Generation",
+      "subtitle": "Student identity cards, term report cards, ya grade certificates ke liye batch generation queue karein."
+    },
+    "signatures": {
+      "title": "Signatures & School Seals",
+      "subtitle": "Automated document branding ke liye authorized signatures aur institutional seals manage karein.",
+      "uploadBtn": "Signature / Stamp Upload Karein"
+    },
+    "reports": {
+      "title": "Document Issuance Reports & Analytics",
+      "subtitle": "Issuance volumes, category breakdowns, reprint ratios audit karein aur compliance register export karein.",
+      "exportCsv": "Register Export Karein (CSV)"
     }
   }
 }

@@ -3,7 +3,7 @@ import { AuthenticatedUser } from '../../middleware/auth.js';
 
 export interface GlobalSearchResult {
   id: string;
-  type: 'class' | 'section' | 'subject' | 'academic_year' | 'user' | 'role' | 'student' | 'admission' | 'guardian' | 'family' | 'page' | 'leave' | 'vehicle' | 'route' | 'inventory_item' | 'asset' | 'event' | 'visitor';
+  type: 'class' | 'section' | 'subject' | 'academic_year' | 'user' | 'role' | 'student' | 'admission' | 'guardian' | 'family' | 'page' | 'leave' | 'vehicle' | 'route' | 'inventory_item' | 'asset' | 'event' | 'visitor' | 'document_template' | 'document';
   category: string;
   title: string;
   subtitle: string;
@@ -764,6 +764,80 @@ export class SearchService {
     ];
 
     for (const page of operationsPages) {
+      const match = page.terms.some((term) => normQuery.includes(term) || term.includes(normQuery) || tokens.some((t) => term.includes(t)));
+      if (match) {
+        results.push({
+          id: page.id,
+          type: 'page',
+          category: 'Navigation',
+          title: page.title,
+          subtitle: page.subtitle,
+          url: page.url,
+          score: 85,
+        });
+      }
+    }
+
+    // 19. Document Templates (Module 11)
+    if (perms.has('documents.templates.view') || perms.has('documents.templates.manage') || isSuper) {
+      const templates = await prisma.documentTemplate.findMany({
+        where: { tenantId, schoolId, status: 'PUBLISHED' },
+        take: 20,
+      });
+      for (const t of templates) {
+        const fields = [t.name, t.code, t.category, t.documentType];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(t.name, t.code, [t.category, t.documentType], trimmed);
+          results.push({
+            id: t.id,
+            type: 'document_template',
+            category: 'Document Templates',
+            title: t.name,
+            subtitle: `${t.category} • ${t.documentType}`,
+            code: t.code,
+            url: `/documents/templates?id=${t.id}`,
+            score: score + 80,
+          });
+        }
+      }
+    }
+
+    // 20. Generated Documents (Module 11)
+    if (perms.has('documents.verify.view') || perms.has('documents.generate') || isSuper) {
+      const docs = await prisma.generatedDocument.findMany({
+        where: { tenantId, schoolId, status: 'FINALIZED' },
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      });
+      for (const d of docs) {
+        const fields = [d.documentNumber, d.documentType, d.category];
+        if (matchesRecord(fields, tokens, normQuery, compactQuery)) {
+          const score = calculateScore(d.documentNumber || 'Document', null, [d.documentType], trimmed);
+          results.push({
+            id: d.id,
+            type: 'document',
+            category: 'Generated Documents',
+            title: d.documentNumber || 'Document',
+            subtitle: `${d.documentType} • ${d.category} • ${d.status}`,
+            code: d.documentNumber || undefined,
+            url: `/documents/generated?id=${d.id}`,
+            score: score + 70,
+          });
+        }
+      }
+    }
+
+    // 21. Document Navigation Pages
+    const documentPages = [
+      { id: 'page-docs-overview', title: 'Documents & Printing Hub', subtitle: 'Centralized certificates, identity cards, and printing hub', url: '/documents/overview', terms: ['document', 'certificate', 'printing', 'bonafide', 'tc'] },
+      { id: 'page-docs-templates', title: 'Document Templates', subtitle: 'Layout designs, variable bindings, and versioning', url: '/documents/templates', terms: ['template', 'document template', 'layout editor'] },
+      { id: 'page-docs-generate', title: 'Generate Certificate / Document', subtitle: 'Issue student certificates, ID cards, and receipts', url: '/documents/generate', terms: ['generate', 'issue bonafide', 'issue certificate'] },
+      { id: 'page-docs-generated', title: 'Generated Documents Register', subtitle: 'Reprint, download, audit, and cancel issued certificates', url: '/documents/generated', terms: ['reprint', 'download pdf', 'document register'] },
+      { id: 'page-docs-bulk', title: 'Bulk Document Generation', subtitle: 'Batch issue ID cards and certificates', url: '/documents/bulk', terms: ['bulk generate', 'bulk id cards', 'bulk print'] },
+      { id: 'page-docs-signatures', title: 'Signatures & School Seals', subtitle: 'Authorized signatories and stamps', url: '/documents/signatures', terms: ['signature', 'stamp', 'seal', 'signatory'] },
+    ];
+
+    for (const page of documentPages) {
       const match = page.terms.some((term) => normQuery.includes(term) || term.includes(normQuery) || tokens.some((t) => term.includes(t)));
       if (match) {
         results.push({

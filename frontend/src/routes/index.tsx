@@ -122,6 +122,18 @@ const TasksView = lazy(() => import('../app/views/communication/TasksView'));
 const ReportsView = lazy(() => import('../app/views/communication/ReportsView'));
 const SettingsView = lazy(() => import('../app/views/communication/SettingsView'));
 
+// Module 11: Documents, Certificates & Printing Views
+const DocumentsLayout = lazy(() => import('../app/views/documents/DocumentsLayout'));
+const DocumentsOverview = lazy(() => import('../app/views/documents/DocumentsOverview'));
+const DocumentTemplatesView = lazy(() => import('../app/views/documents/TemplatesView'));
+const TemplateEditorView = lazy(() => import('../app/views/documents/TemplateEditorView'));
+const GenerateDocumentView = lazy(() => import('../app/views/documents/GenerateDocumentView'));
+const GeneratedDocumentsView = lazy(() => import('../app/views/documents/GeneratedDocumentsView'));
+const BulkGenerationView = lazy(() => import('../app/views/documents/BulkGenerationView'));
+const SignaturesBrandingView = lazy(() => import('../app/views/documents/SignaturesBrandingView'));
+const DocumentReportsView = lazy(() => import('../app/views/documents/DocumentReportsView'));
+const PublicDocumentVerification = lazy(() => import('../app/views/documents/PublicDocumentVerification'));
+
 export default function AppRoutes() {
   return (
     <Suspense
@@ -131,6 +143,7 @@ export default function AppRoutes() {
     >
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/verify/document/:token" element={<PublicDocumentVerification />} />
 
         {/* Protected Application Layout */}
         <Route element={<ProtectedRoute />}>
@@ -306,6 +319,20 @@ export default function AppRoutes() {
               <Route path="reports" element={<ReportsView />} />
               <Route path="settings" element={<SettingsView />} />
             </Route>
+
+            {/* Module 11: Documents, Certificates & Printing */}
+            <Route path="documents" element={<DocumentsLayout />}>
+              <Route index element={<DocumentsOverview />} />
+              <Route path="overview" element={<Navigate to="/documents" replace />} />
+              <Route path="templates" element={<DocumentTemplatesView />} />
+              <Route path="templates/:id/editor" element={<TemplateEditorView />} />
+              <Route path="generate" element={<GenerateDocumentView />} />
+              <Route path="register" element={<GeneratedDocumentsView />} />
+              <Route path="bulk" element={<BulkGenerationView />} />
+              <Route path="signatures" element={<SignaturesBrandingView />} />
+              <Route path="reports" element={<DocumentReportsView />} />
+            </Route>
+            <Route path="lifecycle" element={<Navigate to="/documents" replace />} />
 
             {/* Configuration area */}
             <Route element={<PermissionRoute permission="settings.manage" />}>

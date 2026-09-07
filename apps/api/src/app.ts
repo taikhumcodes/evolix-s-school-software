@@ -45,6 +45,8 @@ import hrRouter from './modules/hr/hr.routes.js';
 import payrollRouter from './modules/hr/payroll.routes.js';
 import { operationsRouter } from './modules/operations/operations.routes.js';
 import { communicationRouter, automationRouter } from './modules/communication/communication.routes.js';
+import { documentsRouter } from './modules/documents/documents.routes.js';
+import { PublicVerifyController } from './modules/documents/public-verify.controller.js';
 
 export const app = express();
 
@@ -124,6 +126,8 @@ app.use('/api/v1/payroll', payrollRouter);
 app.use('/api/v1/operations', operationsRouter);
 app.use('/api/v1/communication', communicationRouter);
 app.use('/api/v1/automation', automationRouter);
+app.use('/api/public/documents/verify/:token', PublicVerifyController.verify);
+app.use('/api/v1/documents', documentsRouter);
 
 // 404 handler for unknown routes
 app.use((req, res, next) => {

@@ -43,6 +43,7 @@
     "operations": "School Operations",
     "transport": "Transport Fleet",
     "certificates": "Certificates & TC",
+    "documents": "Documents & Printing",
     "communication": "Communication",
     "inventory": "Inventory & Assets",
     "users": "Users",
@@ -1551,6 +1552,131 @@
       "createTemplate": "Create Template",
       "createRule": "Create Rule",
       "saveSettings": "Save Configuration"
+    }
+  },
+  "documents": {
+    "title": "Documents, Certificates & Printing",
+    "subtitle": "Centralized document engine for verified student certificates, report cards, ID cards, receipts, payslips, and QR-verifiable official records.",
+    "nav": {
+      "overview": "Overview",
+      "templates": "Templates",
+      "generate": "Generate",
+      "register": "Document Register",
+      "bulk": "Bulk Generation",
+      "signatures": "Signatures & Seals",
+      "reports": "Reports & Analytics"
+    },
+    "actions": {
+      "newDocument": "Issue Certificate",
+      "downloadPdf": "Download PDF",
+      "reprintPdf": "Reprint / Download PDF"
+    },
+    "status": {
+      "finalized": "FINALIZED",
+      "draft": "DRAFT",
+      "cancelled": "CANCELLED",
+      "superseded": "SUPERSEDED"
+    },
+    "stats": {
+      "total": "Total Documents",
+      "totalDesc": "Generated certificates & files",
+      "finalized": "Finalized",
+      "finalizedDesc": "Official & verifiable",
+      "drafts": "Drafts",
+      "draftsDesc": "Pending finalization",
+      "reprints": "Reprints",
+      "reprintsDesc": "Idempotent byte reprints",
+      "cancelled": "Revoked / Cancelled",
+      "cancelledDesc": "Invalidated certificates"
+    },
+    "quickActions": {
+      "title": "Quick Document Actions",
+      "bonafide": "Issue Bonafide Certificate",
+      "bonafideDesc": "Standard student bonafide with QR verification",
+      "bulkIdCards": "Bulk Student ID Cards",
+      "bulkIdCardsDesc": "Batch generate CR80 cards for entire class",
+      "signatures": "Signatures & School Seals",
+      "signaturesDesc": "Upload authorized signatures & seals"
+    },
+    "verify": {
+      "lookupTitle": "Public Verifier",
+      "instantVerify": "Verify Any Issued Certificate",
+      "lookupHelp": "Enter the 64-character verification token from the printed QR code or bottom footer to check authenticity.",
+      "tokenPlaceholder": "Paste verification token...",
+      "verifyBtn": "Check Authenticity"
+    },
+    "recent": {
+      "title": "Recent Document Issuances",
+      "subtitle": "Latest finalized, draft, or reprinted records across the institution",
+      "viewAll": "View Complete Register",
+      "noDocuments": "No documents issued yet. Click 'Issue Certificate' to begin."
+    },
+    "table": {
+      "documentNumber": "Doc # / Number",
+      "type": "Type & Category",
+      "recipient": "Recipient",
+      "status": "Status",
+      "reprints": "Reprints",
+      "date": "Issued Date",
+      "pendingFinalize": "DRAFT (No Number)"
+    },
+    "templates": {
+      "searchPlaceholder": "Search templates by code, name, type...",
+      "newTemplate": "New Template",
+      "emptyTitle": "No Document Templates Found",
+      "emptyDesc": "Create a new template to begin designing certificates and official school documents.",
+      "createFirst": "Create First Template",
+      "editLayout": "Edit Layout",
+      "issueBtn": "Issue",
+      "modalCreateTitle": "Create Document Template",
+      "modalCreateSubtitle": "Define the template type, paper format, and sequence numbering policy.",
+      "formCode": "Template Unique Code",
+      "formName": "Template Display Name",
+      "formType": "Document Type",
+      "formCategory": "Category",
+      "formPageSize": "Paper Size",
+      "formOrientation": "Orientation",
+      "formPolicy": "Numbering Policy",
+      "createAndEdit": "Create & Design Layout"
+    },
+    "category": {
+      "student": "Student",
+      "academic": "Academic",
+      "finance": "Finance",
+      "hr": "HR & Payroll",
+      "operations": "Operations"
+    },
+    "generate": {
+      "title": "Issue Certificate or Document",
+      "subtitle": "Select an approved layout template, assign the student or recipient, preview the rendered PDF, and issue an official verifiable record.",
+      "successFinalized": "Document Finalized & Issued!",
+      "successDraft": "Document Draft Generated",
+      "allocatedMsg": "Assigned official sequence number and stored byte-immutable PDF.",
+      "draftMsg": "Document is saved as draft. You can finalize it anytime.",
+      "issueAnother": "Issue Another Document",
+      "step1": "Select Document Template",
+      "step2": "Select Student / Recipient",
+      "searchStudent": "Search student by name, admission no...",
+      "step3": "Issuance Options",
+      "autoFinalizeLabel": "Auto-Finalize Immediately",
+      "autoFinalizeHelp": "Allocates official sequence number & saves immutable PDF"
+    },
+    "register": {
+      "searchPlaceholder": "Search document #, recipient, type..."
+    },
+    "bulk": {
+      "title": "Bulk Document & Certificate Generation",
+      "subtitle": "Queue asynchronous batch generation for student identity cards, term report cards, or grade certificates."
+    },
+    "signatures": {
+      "title": "Signatures & School Seals",
+      "subtitle": "Manage authorized signature images, principal stamps, and institutional seals for automated document branding.",
+      "uploadBtn": "Upload Signature / Stamp"
+    },
+    "reports": {
+      "title": "Document Issuance Reports & Analytics",
+      "subtitle": "Audit issuance volumes, category breakdowns, reprint ratios, and export compliance registers.",
+      "exportCsv": "Export Register (CSV)"
     }
   }
 }

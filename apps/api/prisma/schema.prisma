@@ -149,6 +149,10 @@ model Tenant {
   automationExecutions         AutomationExecution[]
   scheduledAutomationJobs      ScheduledAutomationJob[]
   automationTasks              AutomationTask[]
+  documentTemplates            DocumentTemplate[]
+  documentSignatureAssets      DocumentSignatureAsset[]
+  generatedDocuments           GeneratedDocument[]
+  bulkDocumentJobs             BulkDocumentJob[]
 
   @@map("tenants")
 }
@@ -287,6 +291,10 @@ model School {
   automationExecutions         AutomationExecution[]
   scheduledAutomationJobs      ScheduledAutomationJob[]
   automationTasks              AutomationTask[]
+  documentTemplates            DocumentTemplate[]
+  documentSignatureAssets      DocumentSignatureAsset[]
+  generatedDocuments           GeneratedDocument[]
+  bulkDocumentJobs             BulkDocumentJob[]
 
   @@map("schools")
 }
@@ -4980,6 +4988,293 @@ model AutomationTask {
   @@index([tenantId, schoolId, status, dueDate])
   @@index([assignedUserId, status])
   @@map("automation_tasks")
+}
+
+// ==========================================
+// MODULE 11: DOCUMENTS, CERTIFICATES & PRINTING
+// ==========================================
+
+enum DocumentType {
+  BONAFIDE_CERTIFICATE
+  TRANSFER_CERTIFICATE
+  CHARACTER_CERTIFICATE
+  STUDENT_ID_CARD
+  ADMISSION_FORM
+  STUDENT_PROFILE
+  REPORT_CARD
+  EXAM_RESULT
+  MARKS_STATEMENT
+  FEE_RECEIPT
+  FEE_STATEMENT
+  STUDENT_LEDGER_STATEMENT
+  EMPLOYEE_ID_CARD
+  EMPLOYMENT_CERTIFICATE
+  EXPERIENCE_CERTIFICATE
+  SALARY_CERTIFICATE
+  APPOINTMENT_LETTER
+  RELIEVING_LETTER
+  PAYSLIP
+  ROUTE_MANIFEST
+  VISITOR_PASS
+  STUDENT_PICKUP_RECORD
+  EVENT_PARTICIPANT_LIST
+  GENERAL_LETTER
+  CUSTOM_CERTIFICATE
+}
+
+enum DocumentCategory {
+  STUDENT
+  ACADEMIC
+  FINANCE
+  HR
+  PAYROLL
+  OPERATIONS
+  GENERAL
+}
+
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DocumentStatus {
+  DRAFT
+  GENERATED
+  FINALIZED
+  CANCELLED
+  SUPERSEDED
+}
+
+enum NumberingPolicy {
+  NUMBER_SERIES_ON_FINALIZE
+  SOURCE_NUMBER
+  NO_OFFICIAL_NUMBER
+}
+
+enum SignatureAssetType {
+  SIGNATURE
+  STAMP
+  SEAL
+}
+
+enum DocumentActionType {
+  GENERATED
+  FINALIZED
+  PRINTED
+  DOWNLOADED
+  REPRINTED
+  CANCELLED
+  SUPERSEDED
+  VERIFIED
+}
+
+enum BulkJobStatus {
+  DRAFT
+  QUEUED
+  PROCESSING
+  COMPLETED
+  PARTIAL
+  FAILED
+  CANCELLED
+}
+
+enum BulkItemStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+model DocumentTemplate {
+  id               String           @id @default(uuid()) @db.Uuid
+  tenantId         String           @map("tenant_id") @db.Uuid
+  schoolId         String           @map("school_id") @db.Uuid
+  code             String           @db.VarChar(50)
+  name             String           @db.VarChar(150)
+  documentType     DocumentType     @map("document_type")
+  category         DocumentCategory
+  pageSize         String           @default("A4") @map("page_size") @db.VarChar(20)
+  orientation      String           @default("PORTRAIT") @db.VarChar(20)
+  language         String           @default("en") @db.VarChar(10)
+  status           TemplateStatus   @default(DRAFT)
+  currentVersionId String?          @map("current_version_id") @db.Uuid
+  createdBy        String?          @map("created_by") @db.Uuid
+  updatedBy        String?          @map("updated_by") @db.Uuid
+  archivedAt       DateTime?        @map("archived_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school             School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  versions           DocumentTemplateVersion[]
+  generatedDocuments GeneratedDocument[]
+  bulkJobs           BulkDocumentJob[]
+
+  @@unique([schoolId, code])
+  @@index([tenantId, schoolId, documentType, status])
+  @@map("document_templates")
+}
+
+model DocumentTemplateVersion {
+  id                 String   @id @default(uuid()) @db.Uuid
+  templateId         String   @map("template_id") @db.Uuid
+  versionNumber      Int      @map("version_number")
+  layoutDefinition   Json     @map("layout_definition")
+  contentDefinition  Json?    @map("content_definition")
+  variableSchema     Json?    @map("variable_schema")
+  styleDefinition    Json?    @map("style_definition")
+  pageSettings       Json?    @map("page_settings")
+  isPublished        Boolean  @default(false) @map("is_published")
+  createdBy          String?  @map("created_by") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  template           DocumentTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  generatedDocuments GeneratedDocument[]
+  bulkJobs           BulkDocumentJob[]
+
+  @@unique([templateId, versionNumber])
+  @@index([templateId, isPublished])
+  @@map("document_template_versions")
+}
+
+model DocumentSignatureAsset {
+  id               String             @id @default(uuid()) @db.Uuid
+  tenantId         String             @map("tenant_id") @db.Uuid
+  schoolId         String             @map("school_id") @db.Uuid
+  name             String             @db.VarChar(150)
+  assetType        SignatureAssetType @map("asset_type")
+  storageKey       String             @map("storage_key") @db.VarChar(500)
+  ownerEmployeeId  String?            @map("owner_employee_id") @db.Uuid
+  designationLabel String?            @map("designation_label") @db.VarChar(100)
+  isActive         Boolean            @default(true) @map("is_active")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, assetType, isActive])
+  @@map("document_signature_assets")
+}
+
+model GeneratedDocument {
+  id                    String           @id @default(uuid()) @db.Uuid
+  tenantId              String           @map("tenant_id") @db.Uuid
+  schoolId              String           @map("school_id") @db.Uuid
+  documentType          DocumentType     @map("document_type")
+  category              DocumentCategory
+  numberingPolicy       NumberingPolicy  @default(NUMBER_SERIES_ON_FINALIZE) @map("numbering_policy")
+  templateId            String           @map("template_id") @db.Uuid
+  templateVersionId     String           @map("template_version_id") @db.Uuid
+  documentNumber        String?          @map("document_number") @db.VarChar(100)
+  sourceType            String           @map("source_type") @db.VarChar(50)
+  sourceId              String           @map("source_id") @db.Uuid
+  recipientType         String?          @map("recipient_type") @db.VarChar(50)
+  recipientId           String?          @map("recipient_id") @db.Uuid
+  language              String           @default("en") @db.VarChar(10)
+  dataSnapshotJson      Json             @map("data_snapshot_json")
+  renderedMetadataJson  Json?            @map("rendered_metadata_json")
+  storageKey            String?          @map("storage_key") @db.VarChar(500)
+  checksumSha256        String?          @map("checksum_sha256") @db.VarChar(64)
+  status                DocumentStatus   @default(DRAFT)
+  verificationTokenHash String?          @unique @map("verification_token_hash") @db.VarChar(64)
+  reprintCount          Int              @default(0) @map("reprint_count")
+  generatedBy           String?          @map("generated_by") @db.Uuid
+  generatedAt           DateTime         @default(now()) @map("generated_at")
+  finalizedAt           DateTime?        @map("finalized_at")
+  cancelledAt           DateTime?        @map("cancelled_at")
+  cancelledBy           String?          @map("cancelled_by") @db.Uuid
+  cancellationReason    String?          @map("cancellation_reason") @db.Text
+  supersedesDocumentId  String?          @map("supersedes_document_id") @db.Uuid
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school             School                  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  template           DocumentTemplate        @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  templateVersion    DocumentTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+  supersededDocument GeneratedDocument?      @relation("DocumentSupersedes", fields: [supersedesDocumentId], references: [id], onDelete: SetNull)
+  supersedingDocs    GeneratedDocument[]     @relation("DocumentSupersedes")
+  actionLogs         DocumentActionLog[]
+  bulkJobItems       BulkDocumentJobItem[]
+
+  @@index([tenantId, schoolId, documentType, status])
+  @@index([sourceType, sourceId])
+  @@index([schoolId, documentNumber])
+  @@index([status, finalizedAt])
+  @@map("generated_documents")
+}
+
+model DocumentActionLog {
+  id         String             @id @default(uuid()) @db.Uuid
+  documentId String             @map("document_id") @db.Uuid
+  tenantId   String             @map("tenant_id") @db.Uuid
+  schoolId   String             @map("school_id") @db.Uuid
+  action     DocumentActionType
+  actorId    String?            @map("actor_id") @db.Uuid
+  ipAddress  String?            @map("ip_address") @db.VarChar(50)
+  userAgent  String?            @map("user_agent") @db.VarChar(255)
+  metadata   Json?
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  document GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, action])
+  @@index([schoolId, createdAt])
+  @@map("document_action_logs")
+}
+
+model BulkDocumentJob {
+  id                      String                  @id @default(uuid()) @db.Uuid
+  tenantId                String                  @map("tenant_id") @db.Uuid
+  schoolId                String                  @map("school_id") @db.Uuid
+  documentTemplateId      String                  @map("document_template_id") @db.Uuid
+  templateVersionId       String                  @map("template_version_id") @db.Uuid
+  sourceSelectionSafeJson Json                    @map("source_selection_safe_json")
+  status                  BulkJobStatus           @default(DRAFT)
+  totalCount              Int                     @default(0) @map("total_count")
+  processedCount          Int                     @default(0) @map("processed_count")
+  successCount            Int                     @default(0) @map("success_count")
+  failedCount             Int                     @default(0) @map("failed_count")
+  createdBy               String?                 @map("created_by") @db.Uuid
+  startedAt               DateTime?               @map("started_at")
+  completedAt             DateTime?               @map("completed_at")
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedAt               DateTime                @default(now()) @updatedAt @map("updated_at")
+
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school          School                  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  template        DocumentTemplate        @relation(fields: [documentTemplateId], references: [id], onDelete: Restrict)
+  templateVersion DocumentTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+  items           BulkDocumentJobItem[]
+
+  @@index([tenantId, schoolId, status])
+  @@map("bulk_document_jobs")
+}
+
+model BulkDocumentJobItem {
+  id                  String             @id @default(uuid()) @db.Uuid
+  jobId               String             @map("job_id") @db.Uuid
+  tenantId            String             @map("tenant_id") @db.Uuid
+  schoolId            String             @map("school_id") @db.Uuid
+  sourceType          String             @map("source_type") @db.VarChar(50)
+  sourceId            String             @map("source_id") @db.Uuid
+  status              BulkItemStatus     @default(PENDING)
+  generatedDocumentId String?            @map("generated_document_id") @db.Uuid
+  errorCode           String?            @map("error_code") @db.VarChar(100)
+  errorMessage        String?            @map("error_message") @db.Text
+  attemptCount        Int                @default(0) @map("attempt_count")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @default(now()) @updatedAt @map("updated_at")
+
+  job               BulkDocumentJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  generatedDocument GeneratedDocument? @relation(fields: [generatedDocumentId], references: [id], onDelete: SetNull)
+
+  @@unique([jobId, sourceType, sourceId])
+  @@index([jobId, status])
+  @@map("bulk_document_job_items")
 }
 
 
