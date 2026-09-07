@@ -29,7 +29,7 @@
     }
   ],
   "records": {
-    "longestRunMs": 0,
+    "longestRunMs": 208622,
     "bestVerdictDay": 8,
     "bestDefectDay": 4,
     "streakDays": 1,

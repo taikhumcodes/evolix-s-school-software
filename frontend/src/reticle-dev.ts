@@ -2,7 +2,7 @@
 // Self-guards on import.meta.env.DEV, so it is a no-op in a production build.
 import { registerCapabilities } from '@reticlehq/react';
 
-if (import.meta.env.DEV) {
+if ((import.meta as any).env?.DEV) {
   // ── Start with ONE flow. ─────────────────────────────────────────────────────────────────────
   // You do not need to describe the whole app to get value, and trying to is the slow path. Register
   // the store your most important flow reads, and list the testids that flow touches. Add more later,

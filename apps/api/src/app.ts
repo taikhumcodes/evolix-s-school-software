@@ -44,6 +44,7 @@ import financeRouter from './modules/finance/finance.routes.js';
 import hrRouter from './modules/hr/hr.routes.js';
 import payrollRouter from './modules/hr/payroll.routes.js';
 import { operationsRouter } from './modules/operations/operations.routes.js';
+import { communicationRouter, automationRouter } from './modules/communication/communication.routes.js';
 
 export const app = express();
 
@@ -121,6 +122,8 @@ app.use('/api/v1/finance', financeRouter);
 app.use('/api/v1/hr', hrRouter);
 app.use('/api/v1/payroll', payrollRouter);
 app.use('/api/v1/operations', operationsRouter);
+app.use('/api/v1/communication', communicationRouter);
+app.use('/api/v1/automation', automationRouter);
 
 // 404 handler for unknown routes
 app.use((req, res, next) => {

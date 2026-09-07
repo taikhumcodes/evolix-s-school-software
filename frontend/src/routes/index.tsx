@@ -110,6 +110,18 @@ const GateView = lazy(() => import('../app/views/operations/GateView').then((m) 
 const EventsView = lazy(() => import('../app/views/operations/EventsView').then((m) => ({ default: m.EventsView })));
 const OperationsReportsView = lazy(() => import('../app/views/operations/OperationsReportsView').then((m) => ({ default: m.OperationsReportsView })));
 
+// Module 10: Communication & Automation Views
+const CommunicationLayout = lazy(() => import('../app/views/communication/CommunicationLayout'));
+const CommunicationOverview = lazy(() => import('../app/views/communication/CommunicationOverview'));
+const MessagesView = lazy(() => import('../app/views/communication/MessagesView'));
+const TemplatesView = lazy(() => import('../app/views/communication/TemplatesView'));
+const AutomationRulesView = lazy(() => import('../app/views/communication/AutomationRulesView'));
+const ScheduledJobsView = lazy(() => import('../app/views/communication/ScheduledJobsView'));
+const NotificationsView = lazy(() => import('../app/views/communication/NotificationsView'));
+const TasksView = lazy(() => import('../app/views/communication/TasksView'));
+const ReportsView = lazy(() => import('../app/views/communication/ReportsView'));
+const SettingsView = lazy(() => import('../app/views/communication/SettingsView'));
+
 export default function AppRoutes() {
   return (
     <Suspense
@@ -281,6 +293,19 @@ export default function AppRoutes() {
             </Route>
             <Route path="transport" element={<Navigate to="/operations/transport" replace />} />
             <Route path="inventory" element={<Navigate to="/operations/inventory" replace />} />
+
+            {/* Module 10: Communication & Automation */}
+            <Route path="communication" element={<CommunicationLayout />}>
+              <Route index element={<CommunicationOverview />} />
+              <Route path="messages" element={<MessagesView />} />
+              <Route path="templates" element={<TemplatesView />} />
+              <Route path="rules" element={<AutomationRulesView />} />
+              <Route path="jobs" element={<ScheduledJobsView />} />
+              <Route path="notifications" element={<NotificationsView />} />
+              <Route path="tasks" element={<TasksView />} />
+              <Route path="reports" element={<ReportsView />} />
+              <Route path="settings" element={<SettingsView />} />
+            </Route>
 
             {/* Configuration area */}
             <Route element={<PermissionRoute permission="settings.manage" />}>

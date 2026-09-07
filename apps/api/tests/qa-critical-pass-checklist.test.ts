@@ -39,7 +39,7 @@ describe('Finance Manual QA — Critical Pass (34 Comprehensive Checkpoints)', (
   let utilityExpenseAccountId: string;
   let badDebtAccountId: string;
 
-  let bankAccountRecordId: string;
+  let bankAccountRecordId: string; 
   let vendorId: string;
 
   const testId = Date.now().toString().slice(-6);

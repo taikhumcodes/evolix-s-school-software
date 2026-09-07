@@ -7,7 +7,7 @@ import path from 'path';
 import { reticle } from '@reticlehq/vite-plugin';
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [reticle(),react(), tailwindcss()],
+  plugins: [!process.env.VITEST && (reticle() as any), react(), tailwindcss()].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

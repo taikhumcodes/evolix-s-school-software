@@ -1528,5 +1528,29 @@
     "invariants": {
       "title": "5 Operations Integrity Guarantees Active"
     }
+  },
+  "communication": {
+    "title": "Communication & Automation",
+    "subtitle": "Multi-channel notifications, transactional domain automation, parent/staff messaging, aur background scheduling.",
+    "tabs": {
+      "overview": "Overview",
+      "messages": "Messages",
+      "templates": "Templates",
+      "rules": "Automation Rules",
+      "jobs": "Scheduled Jobs",
+      "notifications": "Notifications",
+      "tasks": "Internal Tasks",
+      "reports": "Reports & Logs",
+      "settings": "Settings & Providers"
+    },
+    "actions": {
+      "processPending": "Process Pending",
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "manualConfirm": "Mark Sent (Manual)",
+      "createTemplate": "Create Template",
+      "createRule": "Create Rule",
+      "saveSettings": "Save Configuration"
+    }
   }
 }

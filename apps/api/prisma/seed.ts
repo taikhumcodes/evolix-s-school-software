@@ -142,6 +142,18 @@ async function main() {
     { code: 'events.participants.manage', description: 'Manage event coordinators, participants, and bulk enrollment' },
     { code: 'events.results.manage', description: 'Record event attendance, scores, positions, and achievements' },
     { code: 'events.export', description: 'Export event rosters, participant sheets, and results to CSV' },
+    // Module 10: Communication, Workflow & Automation
+    { code: 'communication.view', description: 'View communication history, templates, and delivery logs' },
+    { code: 'communication.templates.manage', description: 'Create, update, and manage message templates' },
+    { code: 'communication.send', description: 'Compose and send single communications or manual confirmations' },
+    { code: 'communication.bulk.manage', description: 'Create, prepare, and manage bulk communication batches' },
+    { code: 'communication.bulk.approve', description: 'Approve bulk communications exceeding delivery threshold' },
+    { code: 'communication.settings.manage', description: 'Manage quiet hours, approval thresholds, and provider configuration' },
+    { code: 'communication.export', description: 'Export masked communication registers to CSV' },
+    { code: 'automation.view', description: 'View automation rules, execution history, and scheduled jobs' },
+    { code: 'automation.manage', description: 'Create, edit, and configure automation workflows and conditions' },
+    { code: 'automation.execute', description: 'Manually trigger automation jobs or test events' },
+    { code: 'automation.tasks.manage', description: 'Assign, update, and complete automated internal tasks' },
   ];
 
   const permissions = [];
@@ -741,6 +753,168 @@ async function main() {
           ifscCode: 'SBIN0001234',
           branchName: 'Main Campus Branch',
           isActive: true,
+        },
+      });
+    }
+  }
+
+  // 20. Module 10: Communication Settings & Starter Kit
+  await prisma.communicationSettings.upsert({
+    where: { schoolId: school.id },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      schoolId: school.id,
+      defaultChannels: ['IN_APP'],
+      quietHoursEnabled: true,
+      quietHoursStart: '21:00',
+      quietHoursEnd: '07:00',
+      bulkApprovalThreshold: 100,
+      version: 1,
+    },
+  });
+
+  // Starter Templates
+  const templateDefs = [
+    {
+      code: 'ATTENDANCE_ABSENT_GUARDIAN_SMS',
+      name: 'Daily Student Absent Alert (SMS)',
+      category: 'ATTENDANCE' as const,
+      channel: 'SMS' as const,
+      subject: 'Absent Alert',
+      body: 'Dear Guardian, {{student.name}} is marked ABSENT today. If unexpected, please contact the school office.',
+    },
+    {
+      code: 'FEE_DUE_REMINDER_EMAIL',
+      name: 'Fee Outstanding Reminder (Email)',
+      category: 'FEES' as const,
+      channel: 'EMAIL' as const,
+      subject: 'Outstanding Fee Reminder for {{student.name}}',
+      body: 'Dear Guardian, This is a reminder that fee invoice {{invoiceNumber}} of Rs. {{outstandingAmount}} for {{student.name}} is pending. Please clear before the due date.',
+    },
+    {
+      code: 'FEE_PAYMENT_CONFIRMATION_WHATSAPP',
+      name: 'Payment Receipt Confirmation (WhatsApp)',
+      category: 'FEES' as const,
+      channel: 'WHATSAPP' as const,
+      subject: 'Fee Receipt Confirmation',
+      body: 'Dear Guardian, we acknowledge receipt of Rs. {{amount}} for {{student.name}} (Receipt: {{receiptNumber}}). Thank you.',
+    },
+    {
+      code: 'EXAM_RESULT_PUBLISHED_INAPP',
+      name: 'Exam Result Announcement (In-App)',
+      category: 'RESULT' as const,
+      channel: 'IN_APP' as const,
+      subject: 'Exam Results Published',
+      body: 'Examination results for {{student.name}} have now been published. Visit Academic portal to view marks and grades.',
+    },
+    {
+      code: 'BUS_NOT_BOARDED_ALERT',
+      name: 'Transport Missed Boarding Alert (SMS)',
+      category: 'TRANSPORT' as const,
+      channel: 'SMS' as const,
+      subject: 'Transport Alert',
+      body: 'URGENT: {{student.name}} has not boarded scheduled bus on route {{routeName}}. Please verify immediately.',
+    },
+  ];
+
+  for (const t of templateDefs) {
+    const existing = await prisma.communicationTemplate.findFirst({
+      where: { schoolId: school.id, code: t.code },
+    });
+    if (!existing) {
+      const created = await prisma.communicationTemplate.create({
+        data: {
+          tenantId: tenant.id,
+          schoolId: school.id,
+          name: t.name,
+          code: t.code,
+          category: t.category,
+          channel: t.channel,
+          subject: t.subject,
+          body: t.body,
+          version: 1,
+        },
+      });
+      await prisma.communicationTemplateVersion.create({
+        data: {
+          templateId: created.id,
+          version: 1,
+          subject: created.subject,
+          body: created.body,
+          changeSummary: 'Seeded starter template',
+          createdBy: adminUser.id,
+        },
+      });
+    }
+  }
+
+  // Starter Automation Rules (Rule 65: Disabled by default)
+  const ruleDefs = [
+    {
+      code: 'RULE_STUDENT_ABSENT_ALERT',
+      name: 'Notify Guardian When Student Marked Absent',
+      eventType: 'STUDENT_ABSENT' as const,
+      conditions: [{ field: 'status', operator: 'EQUALS', value: 'ABSENT', dataType: 'STRING' }],
+      actions: [
+        {
+          actionType: 'SEND_COMMUNICATION' as const,
+          channel: 'SMS' as const,
+          templateCode: 'ATTENDANCE_ABSENT_GUARDIAN_SMS',
+          recipientType: 'STUDENT_GUARDIAN' as const,
+        },
+      ],
+      isActive: false, // Rule 65: disabled by default
+    },
+    {
+      code: 'RULE_FEE_INVOICE_REMINDER',
+      name: 'Fee Outstanding Notification',
+      eventType: 'FEE_INVOICE_GENERATED' as const,
+      conditions: [{ field: 'outstandingAmount', operator: 'GREATER_THAN', value: 0, dataType: 'DECIMAL' }],
+      actions: [
+        {
+          actionType: 'SEND_COMMUNICATION' as const,
+          channel: 'EMAIL' as const,
+          templateCode: 'FEE_DUE_REMINDER_EMAIL',
+          recipientType: 'STUDENT_GUARDIAN' as const,
+        },
+      ],
+      isActive: false, // Rule 65: disabled by default
+    },
+    {
+      code: 'RULE_PAYMENT_CONFIRMATION',
+      name: 'WhatsApp Receipt Confirmation on Fee Payment',
+      eventType: 'PAYMENT_RECEIVED' as const,
+      conditions: [],
+      actions: [
+        {
+          actionType: 'SEND_COMMUNICATION' as const,
+          channel: 'WHATSAPP' as const,
+          templateCode: 'FEE_PAYMENT_CONFIRMATION_WHATSAPP',
+          recipientType: 'STUDENT_GUARDIAN' as const,
+        },
+      ],
+      isActive: false, // Rule 65: disabled by default
+    },
+  ];
+
+  for (const r of ruleDefs) {
+    const existingRule = await prisma.automationRule.findFirst({
+      where: { schoolId: school.id, code: r.code },
+    });
+    if (!existingRule) {
+      await prisma.automationRule.create({
+        data: {
+          tenantId: tenant.id,
+          schoolId: school.id,
+          code: r.code,
+          name: r.name,
+          eventType: r.eventType,
+          conditions: r.conditions as any,
+          actions: r.actions as any,
+          isActive: r.isActive,
+          version: 1,
+          createdBy: adminUser.id,
         },
       });
     }

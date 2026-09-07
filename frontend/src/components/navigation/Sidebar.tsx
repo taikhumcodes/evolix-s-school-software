@@ -103,8 +103,15 @@ export const Sidebar: React.FC = () => {
       permission: null,
       badge: 'M09',
     },
+    {
+      name: t('navigation.communication', 'Communication & Automation'),
+      path: '/communication',
+      icon: MessageSquare,
+      entitlement: null,
+      permission: null,
+      badge: 'M10',
+    },
     { name: t('navigation.certificates', 'Certificates & TC'), path: '/lifecycle', icon: FileBadge, entitlement: null },
-    { name: t('navigation.communication', 'Communication'), path: '/communication', icon: MessageSquare, entitlement: null },
   ];
 
   return (

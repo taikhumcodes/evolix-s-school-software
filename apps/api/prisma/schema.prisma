@@ -139,6 +139,16 @@ model Tenant {
   eventParticipants            EventParticipant[]
   eventAchievements            EventAchievement[]
   eventExpenseLinks            EventExpenseLink[]
+  communicationTemplates       CommunicationTemplate[]
+  communicationBatches         CommunicationBatch[]
+  communicationMessages        CommunicationMessage[]
+  inAppNotifications           InAppNotification[]
+  communicationSettings        CommunicationSettings[]
+  domainEvents                 DomainEvent[]
+  automationRules              AutomationRule[]
+  automationExecutions         AutomationExecution[]
+  scheduledAutomationJobs      ScheduledAutomationJob[]
+  automationTasks              AutomationTask[]
 
   @@map("tenants")
 }
@@ -267,6 +277,16 @@ model School {
   eventParticipants            EventParticipant[]
   eventAchievements            EventAchievement[]
   eventExpenseLinks            EventExpenseLink[]
+  communicationTemplates       CommunicationTemplate[]
+  communicationBatches         CommunicationBatch[]
+  communicationMessages        CommunicationMessage[]
+  inAppNotifications           InAppNotification[]
+  communicationSettings        CommunicationSettings?
+  domainEvents                 DomainEvent[]
+  automationRules              AutomationRule[]
+  automationExecutions         AutomationExecution[]
+  scheduledAutomationJobs      ScheduledAutomationJob[]
+  automationTasks              AutomationTask[]
 
   @@map("schools")
 }
@@ -391,6 +411,12 @@ model User {
   checkedOutVisits            VisitorVisit[]            @relation("VisitCheckedOutBy")
   releasedStudentPickups      StudentPickupRelease[]
   createdSchoolEvents         SchoolEvent[]
+  createdTemplateVersions     CommunicationTemplateVersion[] @relation("TemplateVersionCreatedBy")
+  createdBatches              CommunicationBatch[]      @relation("BatchCreatedBy")
+  approvedBatches             CommunicationBatch[]      @relation("BatchApprovedBy")
+  inAppNotifications          InAppNotification[]
+  createdAutomationRules      AutomationRule[]          @relation("RuleCreatedBy")
+  assignedAutomationTasks     AutomationTask[]          @relation("TaskAssignedUser")
 
   @@map("users")
 }
@@ -4453,4 +4479,507 @@ model EventExpenseLink {
   @@index([tenantId, schoolId, eventId])
   @@map("event_expense_links")
 }
+
+// ======================================================================
+// MODULE 10 — CORE COMMUNICATION (PHASE 1)
+// ======================================================================
+
+enum CommunicationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum CommunicationCategory {
+  ATTENDANCE
+  FEES
+  ADMISSION
+  ACADEMIC
+  EXAM
+  RESULT
+  HR
+  PAYROLL
+  TRANSPORT
+  EVENT
+  GENERAL
+  SYSTEM
+}
+
+enum TemplateLanguage {
+  ENGLISH
+  HINDI
+  HINGLISH
+}
+
+enum MessageStatus {
+  DRAFT
+  QUEUED
+  PROCESSING
+  PREPARED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  CANCELLED
+  SKIPPED
+  PROVIDER_NOT_CONFIGURED
+  MANUAL_ACTION_REQUIRED
+}
+
+enum RecipientType {
+  USER
+  GUARDIAN
+  EMPLOYEE
+  STUDENT_GUARDIAN
+  CUSTOM_INTERNAL_TARGET
+}
+
+enum BatchStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  QUEUED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum SendEvidenceType {
+  PROVIDER_ACCEPTED
+  MANUAL_CONFIRMED
+  PROVIDER_DELIVERED
+  IN_APP_READ
+}
+
+model CommunicationTemplate {
+  id          String                @id @default(uuid()) @db.Uuid
+  tenantId    String                @map("tenant_id") @db.Uuid
+  schoolId    String                @map("school_id") @db.Uuid
+  name        String                @db.VarChar(100)
+  code        String                @db.VarChar(50)
+  category    CommunicationCategory
+  channel     CommunicationChannel
+  subject     String?               @db.VarChar(255)
+  body        String                @db.Text
+  language    TemplateLanguage      @default(ENGLISH)
+  status      String                @default("ACTIVE") @db.VarChar(30) // ACTIVE, ARCHIVED
+  version     Int                   @default(1)
+  archivedAt  DateTime?             @map("archived_at")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @default(now()) @updatedAt @map("updated_at")
+
+  tenant      Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school      School                        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  versions    CommunicationTemplateVersion[]
+  messages    CommunicationMessage[]
+  batches     CommunicationBatch[]
+
+  @@unique([schoolId, code])
+  @@index([tenantId, schoolId, category, channel])
+  @@map("communication_templates")
+}
+
+model CommunicationTemplateVersion {
+  id            String           @id @default(uuid()) @db.Uuid
+  templateId    String           @map("template_id") @db.Uuid
+  version       Int
+  subject       String?          @db.VarChar(255)
+  body          String           @db.Text
+  language      TemplateLanguage @default(ENGLISH)
+  changeSummary String?          @map("change_summary") @db.VarChar(255)
+  createdBy     String           @map("created_by") @db.Uuid
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  template      CommunicationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  creator       User                  @relation("TemplateVersionCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
+  @@index([templateId])
+  @@map("communication_template_versions")
+}
+
+model CommunicationPreference {
+  id                   String                @id @default(uuid()) @db.Uuid
+  tenantId             String                @map("tenant_id") @db.Uuid
+  schoolId             String                @map("school_id") @db.Uuid
+  recipientType        RecipientType         @map("recipient_type")
+  recipientReferenceId String                @map("recipient_reference_id") @db.Uuid
+  category             CommunicationCategory
+  channel              CommunicationChannel
+  enabled              Boolean               @default(true)
+  preferredLanguage    TemplateLanguage      @default(ENGLISH) @map("preferred_language")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([schoolId, recipientType, recipientReferenceId, category, channel], name: "unique_recipient_channel_pref")
+  @@index([tenantId, schoolId, recipientReferenceId])
+  @@map("communication_preferences")
+}
+
+model CommunicationBatch {
+  id                         String                @id @default(uuid()) @db.Uuid
+  tenantId                   String                @map("tenant_id") @db.Uuid
+  schoolId                   String                @map("school_id") @db.Uuid
+  name                       String                @db.VarChar(150)
+  category                   CommunicationCategory
+  channel                    CommunicationChannel
+  templateId                 String?               @map("template_id") @db.Uuid
+  templateVersion            Int?                  @map("template_version")
+  audienceDefinitionSafeJson Json                  @map("audience_definition_safe_json")
+  recipientCount             Int                   @default(0) @map("recipient_count")
+  preparedCount              Int                   @default(0) @map("prepared_count")
+  sentCount                  Int                   @default(0) @map("sent_count")
+  deliveredCount             Int                   @default(0) @map("delivered_count")
+  failedCount                Int                   @default(0) @map("failed_count")
+  skippedCount               Int                   @default(0) @map("skipped_count")
+  status                     BatchStatus           @default(DRAFT)
+  scheduledAt                DateTime?             @map("scheduled_at")
+  requiresApproval           Boolean               @default(false) @map("requires_approval")
+  approvedAt                 DateTime?             @map("approved_at")
+  approvedBy                 String?               @map("approved_by") @db.Uuid
+  createdBy                  String                @map("created_by") @db.Uuid
+  version                    Int                   @default(1)
+  createdAt                  DateTime              @default(now()) @map("created_at")
+  updatedAt                  DateTime              @default(now()) @updatedAt @map("updated_at")
+
+  tenant                     Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school                     School                 @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  template                   CommunicationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  creator                    User                   @relation("BatchCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  approver                   User?                  @relation("BatchApprovedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
+  messages                   CommunicationMessage[]
+
+  @@index([tenantId, schoolId, status, createdAt])
+  @@map("communication_batches")
+}
+
+model CommunicationMessage {
+  id                   String                @id @default(uuid()) @db.Uuid
+  tenantId             String                @map("tenant_id") @db.Uuid
+  schoolId             String                @map("school_id") @db.Uuid
+  batchId              String?               @map("batch_id") @db.Uuid
+  templateId           String?               @map("template_id") @db.Uuid
+  templateVersion      Int?                  @map("template_version")
+  category             CommunicationCategory
+  channel              CommunicationChannel
+  recipientType        RecipientType         @map("recipient_type")
+  recipientReferenceId String                @map("recipient_reference_id") @db.Uuid
+  destinationEncrypted String?               @map("destination_encrypted") @db.Text
+  destinationMasked    String?               @map("destination_masked") @db.VarChar(100)
+  subjectRendered      String?               @map("subject_rendered") @db.VarChar(255)
+  bodyRendered         String                @map("body_rendered") @db.Text
+  status               MessageStatus         @default(QUEUED)
+  sendEvidenceType     SendEvidenceType?     @map("send_evidence_type")
+  deliveryMode         String?               @default("AUTOMATIC") @map("delivery_mode") @db.VarChar(50) // AUTOMATIC, MANUAL_CONFIRMED
+  manualConfirmedAt    DateTime?             @map("manual_confirmed_at")
+  manualConfirmedBy    String?               @map("manual_confirmed_by") @db.Uuid
+  scheduledAt          DateTime?             @map("scheduled_at")
+  queuedAt             DateTime              @default(now()) @map("queued_at")
+  processedAt          DateTime?             @map("processed_at")
+  sentAt               DateTime?             @map("sent_at")
+  deliveredAt          DateTime?             @map("delivered_at")
+  readAt               DateTime?             @map("read_at")
+  provider             String?               @db.VarChar(50)
+  providerMessageId    String?               @map("provider_message_id") @db.VarChar(150)
+  attemptCount         Int                   @default(0) @map("attempt_count")
+  lastAttemptAt        DateTime?             @map("last_attempt_at")
+  lastErrorCode        String?               @map("last_error_code") @db.VarChar(100)
+  lastErrorMessage     String?               @map("last_error_message") @db.VarChar(255)
+  sourceType           String?               @map("source_type") @db.VarChar(50)
+  sourceId             String?               @map("source_id") @db.Uuid
+  idempotencyKey       String?               @unique @map("idempotency_key") @db.VarChar(150)
+  isTest               Boolean               @default(false) @map("is_test")
+  createdBy            String?               @map("created_by") @db.Uuid
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @default(now()) @updatedAt @map("updated_at")
+
+  tenant               Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school               School                        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  batch                CommunicationBatch?           @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  template             CommunicationTemplate?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  deliveryAttempts     CommunicationDeliveryAttempt[]
+
+  @@index([tenantId, schoolId, status, scheduledAt])
+  @@index([schoolId, recipientReferenceId])
+  @@index([schoolId, sourceType, sourceId])
+  @@map("communication_messages")
+}
+
+model CommunicationDeliveryAttempt {
+  id                String        @id @default(uuid()) @db.Uuid
+  messageId         String        @map("message_id") @db.Uuid
+  attemptNumber     Int           @map("attempt_number")
+  provider          String        @db.VarChar(50)
+  startedAt         DateTime      @default(now()) @map("started_at")
+  completedAt       DateTime?     @map("completed_at")
+  resultStatus      MessageStatus @map("result_status")
+  errorCode         String?       @map("error_code") @db.VarChar(100)
+  errorMessage      String?       @map("error_message") @db.VarChar(255)
+  providerMessageId String?       @map("provider_message_id") @db.VarChar(150)
+  safeMetadata      Json?         @map("safe_metadata")
+
+  message           CommunicationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId, attemptNumber])
+  @@map("communication_delivery_attempts")
+}
+
+model InAppNotification {
+  id         String                @id @default(uuid()) @db.Uuid
+  tenantId   String                @map("tenant_id") @db.Uuid
+  schoolId   String                @map("school_id") @db.Uuid
+  userId     String                @map("user_id") @db.Uuid
+  title      String                @db.VarChar(150)
+  body       String                @db.Text
+  category   CommunicationCategory
+  entityType String?               @map("entity_type") @db.VarChar(50)
+  entityId   String?               @map("entity_id") @db.Uuid
+  actionUrl  String?               @map("action_url") @db.VarChar(255)
+  isRead     Boolean               @default(false) @map("is_read")
+  readAt     DateTime?             @map("read_at")
+  sourceId   String?               @map("source_id") @db.Uuid
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school     School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([schoolId, entityType, entityId])
+  @@map("in_app_notifications")
+}
+
+model CommunicationSettings {
+  id                     String   @id @default(uuid()) @db.Uuid
+  tenantId               String   @map("tenant_id") @db.Uuid
+  schoolId               String   @unique @map("school_id") @db.Uuid
+  defaultChannels        Json     @default("[\"IN_APP\"]") @map("default_channels")
+  quietHoursEnabled      Boolean  @default(false) @map("quiet_hours_enabled")
+  quietHoursStart        String   @default("21:00") @map("quiet_hours_start") @db.VarChar(10)
+  quietHoursEnd          String   @default("07:00") @map("quiet_hours_end") @db.VarChar(10)
+  bulkApprovalThreshold  Int      @default(100) @map("bulk_approval_threshold")
+  version                Int      @default(1)
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant                 Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school                 School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("communication_settings")
+}
+
+// ==========================================
+// MODULE 10: AUTOMATION & SCHEDULER (PHASE 2)
+// ==========================================
+
+enum AutomationEventType {
+  STUDENT_ABSENT
+  FEE_INVOICE_GENERATED
+  PAYMENT_RECEIVED
+  EXAM_RESULT_PUBLISHED
+  PAYSLIP_GENERATED
+  STUDENT_NOT_BOARDED_BUS
+  DOCUMENT_EXPIRING
+  EVENT_SCHEDULED
+  GATE_VISITOR_CHECKED_IN
+  CUSTOM
+}
+
+enum AutomationConditionOperator {
+  EQUALS
+  NOT_EQUALS
+  GREATER_THAN
+  LESS_THAN
+  GREATER_THAN_OR_EQUAL
+  LESS_THAN_OR_EQUAL
+  CONTAINS
+  IN
+  NOT_IN
+}
+
+enum AutomationActionType {
+  SEND_COMMUNICATION
+  CREATE_IN_APP_NOTIFICATION
+  CREATE_INTERNAL_TASK
+  DEFER_COMMUNICATION
+}
+
+enum EventProcessingStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  SKIPPED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model DomainEvent {
+  id               String                @id @default(uuid()) @db.Uuid
+  tenantId         String                @map("tenant_id") @db.Uuid
+  schoolId         String                @map("school_id") @db.Uuid
+  eventType        AutomationEventType   @map("event_type")
+  sourceType       String                @map("source_type") @db.VarChar(50)
+  sourceId         String                @map("source_id") @db.Uuid
+  payload          Json
+  processingStatus EventProcessingStatus @default(PENDING) @map("processing_status")
+  occurredAt       DateTime              @default(now()) @map("occurred_at")
+  lockedAt         DateTime?             @map("locked_at")
+  lockedBy         String?               @map("locked_by") @db.VarChar(100)
+  attemptCount     Int                   @default(0) @map("attempt_count")
+  processedAt      DateTime?             @map("processed_at")
+  lastError        String?               @map("last_error") @db.Text
+  isTest           Boolean               @default(false) @map("is_test")
+
+  tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school           School                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  executions       AutomationExecution[]
+
+  @@index([tenantId, schoolId, processingStatus, occurredAt])
+  @@index([processingStatus, lockedAt])
+  @@map("domain_events")
+}
+
+model AutomationRule {
+  id            String              @id @default(uuid()) @db.Uuid
+  tenantId      String              @map("tenant_id") @db.Uuid
+  schoolId      String              @map("school_id") @db.Uuid
+  code          String              @db.VarChar(100)
+  name          String              @db.VarChar(150)
+  description   String?             @db.Text
+  eventType     AutomationEventType @map("event_type")
+  conditions    Json
+  actions       Json
+  isActive      Boolean             @default(false) @map("is_active")
+  effectiveFrom DateTime?           @map("effective_from")
+  effectiveTo   DateTime?           @map("effective_to")
+  version       Int                 @default(1)
+  createdBy     String              @map("created_by") @db.Uuid
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @default(now()) @updatedAt @map("updated_at")
+
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school        School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  creator       User                @relation("RuleCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  executions    AutomationExecution[]
+
+  @@unique([schoolId, code])
+  @@index([tenantId, schoolId, eventType, isActive])
+  @@map("automation_rules")
+}
+
+model AutomationExecution {
+  id               String                     @id @default(uuid()) @db.Uuid
+  tenantId         String                     @map("tenant_id") @db.Uuid
+  schoolId         String                     @map("school_id") @db.Uuid
+  ruleId           String                     @map("rule_id") @db.Uuid
+  eventId          String                     @map("event_id") @db.Uuid
+  ruleVersion      Int                        @map("rule_version")
+  status           EventProcessingStatus      @default(PENDING)
+  skipReason       String?                    @map("skip_reason") @db.VarChar(100)
+  executedAt       DateTime                   @default(now()) @map("executed_at")
+  completedAt      DateTime?                  @map("completed_at")
+  errorMessage     String?                    @map("error_message") @db.Text
+
+  tenant           Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school           School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  rule             AutomationRule             @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  event            DomainEvent                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  actionExecutions AutomationActionExecution[]
+
+  @@unique([ruleId, eventId, ruleVersion])
+  @@index([tenantId, schoolId, executedAt])
+  @@map("automation_executions")
+}
+
+model AutomationActionExecution {
+  id           String                @id @default(uuid()) @db.Uuid
+  executionId  String                @map("execution_id") @db.Uuid
+  actionIndex  Int                   @map("action_index")
+  actionType   AutomationActionType  @map("action_type")
+  status       EventProcessingStatus @default(PENDING)
+  targetEntity String?               @map("target_entity") @db.VarChar(50)
+  targetId     String?               @map("target_id") @db.Uuid
+  outputData   Json?                 @map("output_data")
+  executedAt   DateTime              @default(now()) @map("executed_at")
+  completedAt  DateTime?             @map("completed_at")
+  errorMessage String?               @map("error_message") @db.Text
+
+  execution    AutomationExecution   @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@unique([executionId, actionIndex])
+  @@map("automation_action_executions")
+}
+
+model ScheduledAutomationJob {
+  id             String     @id @default(uuid()) @db.Uuid
+  tenantId       String     @map("tenant_id") @db.Uuid
+  schoolId       String     @map("school_id") @db.Uuid
+  jobType        String     @map("job_type") @db.VarChar(50)
+  sourceType     String     @map("source_type") @db.VarChar(50)
+  sourceId       String     @map("source_id") @db.Uuid
+  scheduledFor   DateTime   @map("scheduled_for")
+  idempotencyKey String?    @unique @map("idempotency_key") @db.VarChar(150)
+  payload        Json
+  status         JobStatus  @default(PENDING)
+  lockedAt       DateTime?  @map("locked_at")
+  lockedBy       String?    @map("locked_by") @db.VarChar(100)
+  attemptCount   Int        @default(0) @map("attempt_count")
+  deferCount     Int        @default(0) @map("defer_count")
+  maxDefers      Int        @default(3) @map("max_defers")
+  completedAt    DateTime?  @map("completed_at")
+  lastError      String?    @map("last_error") @db.Text
+  skipReason     String?    @map("skip_reason") @db.VarChar(100)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school         School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, schoolId, status, scheduledFor])
+  @@index([status, lockedAt])
+  @@map("scheduled_automation_jobs")
+}
+
+model AutomationTask {
+  id                 String     @id @default(uuid()) @db.Uuid
+  tenantId           String     @map("tenant_id") @db.Uuid
+  schoolId           String     @map("school_id") @db.Uuid
+  title              String     @db.VarChar(200)
+  description        String?    @db.Text
+  priority           String     @default("MEDIUM") @db.VarChar(20)
+  assignedRole       String?    @map("assigned_role") @db.VarChar(50)
+  assignedUserId     String?    @map("assigned_user_id") @db.Uuid
+  dueDate            DateTime?  @map("due_date")
+  status             TaskStatus @default(PENDING)
+  sourceExecutionId  String?    @map("source_execution_id") @db.Uuid
+  sourceActionIndex  Int?       @map("source_action_index")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  tenant             Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  school             School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  assignedUser       User?      @relation("TaskAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceExecutionId, sourceActionIndex])
+  @@index([tenantId, schoolId, status, dueDate])
+  @@index([assignedUserId, status])
+  @@map("automation_tasks")
+}
+
 

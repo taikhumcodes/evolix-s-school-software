@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { TenantSwitcher } from './TenantSwitcher';
 import {
-  Bell,
   LogOut,
   Menu,
   Search,
@@ -27,6 +26,7 @@ import { useTenant } from '../../core/tenancy/TenantContext';
 import { useTranslation } from 'react-i18next';
 import { useGlobalSearch } from '../../lib/api/search';
 import { highlightMatches } from '../../lib/search/search-engine';
+import { NotificationBell } from '../notifications/NotificationBell';
 
 const HighlightedText: React.FC<{ text: string; query: string; className?: string }> = ({
   text,
@@ -677,13 +677,7 @@ export const Header: React.FC = () => {
             </button>
           </div>
 
-          <button
-            className="relative p-2 rounded-xl text-zinc-500 hover:text-zinc-900 bg-white hover:bg-zinc-50 border border-zinc-200 transition-all"
-            aria-label="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-mehndi-500 ring-2 ring-white"></span>
-          </button>
+          <NotificationBell />
 
           <button
             onClick={logout}

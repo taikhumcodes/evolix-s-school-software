@@ -12,10 +12,16 @@ async function startServer() {
 
     const server = app.listen(PORT, '0.0.0.0', () => {
       logger.info(`EVOLIX School ERP API listening on http://0.0.0.0:${PORT}`);
+      // Rule 6: Start in-process worker loop once per application process
+      import('./modules/communication/automation/scheduler.service.js').then(({ SchedulerService }) => {
+        SchedulerService.startWorker(10000);
+      });
     });
 
     const shutdown = async () => {
       logger.info('Shutting down API server...');
+      const { SchedulerService } = await import('./modules/communication/automation/scheduler.service.js');
+      SchedulerService.stopWorker();
       server.close(async () => {
         await prisma.$disconnect();
         logger.info('Prisma disconnected, server exited.');
