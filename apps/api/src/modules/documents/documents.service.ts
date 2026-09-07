@@ -77,6 +77,68 @@ export class DocumentsService {
     return template;
   }
 
+  public static getDefaultInitialLayout(documentType: string, name: string): LayoutDefinition {
+    if (documentType === 'STUDENT_ID_CARD') {
+      return {
+        margins: { top: 30, bottom: 30, left: 30, right: 30 },
+        elements: [
+          { id: 'school_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 18, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'doc_title', type: 'TEXT', content: 'STUDENT IDENTITY CARD', style: { fontSize: 12, bold: true, alignment: 'center', marginTop: 6, color: '#475569' } },
+          { id: 'divider_1', type: 'LINE', style: { marginTop: 12, lineWidth: 1.5, lineColor: '#cbd5e1' } },
+          { id: 'student_name', type: 'TEXT', content: 'Student Name: {{student.fullName}}', style: { fontSize: 14, bold: true, marginTop: 16 } },
+          { id: 'student_adm', type: 'TEXT', content: 'Admission No: {{student.admissionNumber}}', style: { fontSize: 11, marginTop: 6 } },
+          { id: 'student_class', type: 'TEXT', content: 'Class: {{academic.className}}', style: { fontSize: 11, marginTop: 6 } },
+          { id: 'student_dob', type: 'TEXT', content: 'Date of Birth: {{student.dateOfBirthFormatted}}', style: { fontSize: 11, marginTop: 6 } },
+          { id: 'student_blood', type: 'TEXT', content: 'Blood Group: {{student.bloodGroup}}', style: { fontSize: 11, marginTop: 6 } },
+          { id: 'student_contact', type: 'TEXT', content: 'Emergency Contact: {{student.emergencyContact}}', style: { fontSize: 11, marginTop: 6 } },
+          { id: 'divider_2', type: 'LINE', style: { marginTop: 20, lineWidth: 1, lineColor: '#e2e8f0' } },
+          { id: 'qr', type: 'QR_CODE', style: { width: 60, height: 60, marginTop: 15, alignment: 'right' } },
+        ],
+      };
+    }
+
+    if (documentType === 'BONAFIDE_CERTIFICATE') {
+      return {
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 20, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'doc_title', type: 'TEXT', content: 'BONAFIDE CERTIFICATE', style: { fontSize: 16, bold: true, alignment: 'center', marginTop: 15 } },
+          { id: 'ref_row', type: 'ROW', style: { marginTop: 20 }, children: [
+            { id: 'ref_no', type: 'TEXT', content: 'Ref No: {{document.number}}', style: { bold: true } },
+            { id: 'issue_date', type: 'TEXT', content: 'Date: {{document.dateFormatted}}', style: { alignment: 'right' } },
+          ]},
+          { id: 'cert_body', type: 'PARAGRAPH', style: { marginTop: 30, lineHeight: 1.6, fontSize: 12 }, content: 'This is to certify that {{student.fullName}} (Admission No: {{student.admissionNumber}}) is a bonafide student of {{school.name}} studying in {{academic.className}} during the academic session {{academic.academicYear}}.' },
+          { id: 'qr', type: 'QR_CODE', style: { width: 70, height: 70, marginTop: 40, alignment: 'left' } },
+        ],
+      };
+    }
+
+    if (documentType === 'CHARACTER_CERTIFICATE') {
+      return {
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        elements: [
+          { id: 'header_title', type: 'TEXT', content: '{{school.name}}', style: { fontSize: 20, bold: true, alignment: 'center', color: '#1e3a8a' } },
+          { id: 'doc_title', type: 'TEXT', content: 'CHARACTER CERTIFICATE', style: { fontSize: 16, bold: true, alignment: 'center', marginTop: 15 } },
+          { id: 'ref_row', type: 'ROW', style: { marginTop: 20 }, children: [
+            { id: 'ref_no', type: 'TEXT', content: 'Ref No: {{document.number}}', style: { bold: true } },
+            { id: 'issue_date', type: 'TEXT', content: 'Date: {{document.dateFormatted}}', style: { alignment: 'right' } },
+          ]},
+          { id: 'cert_body', type: 'PARAGRAPH', style: { marginTop: 30, lineHeight: 1.6, fontSize: 12 }, content: 'This is to certify that {{student.fullName}} (Admission No: {{student.admissionNumber}}) has been a student of good moral character at {{school.name}}.' },
+          { id: 'qr', type: 'QR_CODE', style: { width: 70, height: 70, marginTop: 40, alignment: 'left' } },
+        ],
+      };
+    }
+
+    return {
+      margins: { top: 36, bottom: 36, left: 36, right: 36 },
+      elements: [
+        { id: 'title', type: 'TEXT', content: name, style: { fontSize: 18, bold: true, alignment: 'center' } },
+        { id: 'body', type: 'PARAGRAPH', content: 'Document content for {{student.fullName}} (Admission: {{student.admissionNumber}}).', style: { marginTop: 20, fontSize: 11 } },
+        { id: 'qr', type: 'QR_CODE', style: { width: 60, height: 60, marginTop: 30, alignment: 'right' } },
+      ],
+    };
+  }
+
   public static async createTemplate(
     tenantId: string,
     schoolId: string,
@@ -90,28 +152,8 @@ export class DocumentsService {
       throw new Error(`A template with code '${dto.code}' already exists in this school.`);
     }
 
-    const initialLayout: LayoutDefinition = dto.initialLayout || {
-      margins: { top: 36, bottom: 36, left: 36, right: 36 },
-      elements: [
-        {
-          id: 'title',
-          type: 'TEXT',
-          content: dto.name,
-          style: { fontSize: 18, bold: true, alignment: 'center' },
-        },
-        {
-          id: 'body',
-          type: 'PARAGRAPH',
-          content: 'Document content goes here.',
-          style: { marginTop: 20, fontSize: 11 },
-        },
-        {
-          id: 'qr',
-          type: 'QR_CODE',
-          style: { width: 60, height: 60, marginTop: 30, alignment: 'right' },
-        },
-      ],
-    };
+    const initialLayout: LayoutDefinition =
+      dto.initialLayout || this.getDefaultInitialLayout(dto.documentType, dto.name);
 
     TemplateLayoutEngine.validateLayout(initialLayout);
 

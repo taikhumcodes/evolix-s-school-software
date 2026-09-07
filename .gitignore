@@ -17,6 +17,9 @@ htmlcov/
 node_modules/
 dist/
 storage/
+uploads/
+apps/api/uploads/
+apps/api/storage/
 custom_storage/
 backend/custom_storage/
 
